@@ -414,8 +414,17 @@
   .ficha-corpo{display:grid;grid-template-columns:1fr 1fr;overflow:hidden;flex:1;min-height:0;}
 
   .ficha-galeria{background:var(--cream-soft);display:flex;flex-direction:column;min-height:0;}
-  .ficha-palco{position:relative;flex:1;overflow:hidden;min-height:0;}
-  .ficha-palco img{width:100%;height:100%;object-fit:cover;}
+  .ficha-palco{
+    position:relative;flex:1;overflow:hidden;min-height:0;
+    background:var(--cream-soft);
+  }
+  /* contain (e nao cover) pra nunca cortar a peca na ficha */
+  .ficha-palco img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1;}
+  /* a propria foto, borrada, preenche as faixas que sobram nas laterais */
+  .ficha-palco .borrao{
+    position:absolute;inset:0;z-index:0;object-fit:cover;
+    filter:blur(26px) saturate(1.25);transform:scale(1.2);opacity:.45;
+  }
   .ficha-seta{
     position:absolute;top:50%;transform:translateY(-50%);z-index:2;
     width:38px;height:38px;border-radius:50%;background:rgba(251,240,225,.9);
@@ -786,7 +795,7 @@
     /* ficha vira folha que sobe */
     .ficha{
       left:0;right:0;bottom:0;top:auto;width:100%;
-      transform:translateY(100%);max-height:94vh;
+      transform:translateY(100%);max-height:92vh;max-height:92dvh;
       border-radius:var(--r-xl) var(--r-xl) 0 0;
     }
     .ficha.aberta{transform:translateY(0);}
@@ -796,7 +805,7 @@
     }
     .ficha-corpo{display:flex;flex-direction:column;overflow-y:auto;}
     .ficha-galeria{flex:0 0 auto;}
-    .ficha-palco{aspect-ratio:1/1;flex:none;}
+    .ficha-palco{aspect-ratio:4/5;flex:none;max-height:56vh;max-height:56dvh;}
     .ficha-info{padding:22px 20px 26px;overflow:visible;}
     .ficha-nome{font-size:1.4rem;}
     .ficha-precos .price{font-size:1.3rem;}
@@ -2069,6 +2078,7 @@ function renderFicha(){
   const galeria = `
     <div class="ficha-galeria">
       <div class="ficha-palco">
+        <img class="borrao" src="${slides[fichaEstado.foto]}" alt="" aria-hidden="true">
         <img src="${slides[fichaEstado.foto]}" alt="${esc(p.name)}" id="fichaFoto">
         ${slides.length>1?`
           <button class="ficha-seta ant" data-foto="-1" aria-label="Foto anterior">&#8249;</button>
