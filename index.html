@@ -239,12 +239,23 @@
   }
   .size-pill:hover{border-color:var(--wine);}
   .size-pill.selected{border-color:var(--wine);background:var(--wine);color:var(--cream);}
+  .size-pill.esgotada{
+    opacity:.4;cursor:not-allowed;text-decoration:line-through;
+    background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(122,42,66,.07) 4px,rgba(122,42,66,.07) 8px);
+  }
+  .size-pill.esgotada:hover{border-color:var(--line);}
   .color-row{display:flex;gap:8px;align-items:center;}
   .color-dot{
     width:20px;height:20px;border-radius:50%;border:1px solid var(--line);cursor:pointer;
     box-shadow:inset 0 0 0 2px var(--cream);transition:.15s;
   }
   .color-dot.selected{box-shadow:inset 0 0 0 2px var(--cream), 0 0 0 1.5px var(--wine);}
+  .color-dot.esgotada{opacity:.35;}
+  .color-dot.esgotada::after{
+    content:'';position:absolute;left:50%;top:-3px;width:1px;height:26px;
+    background:var(--ink);transform:rotate(45deg);transform-origin:top;
+  }
+  .color-dot{position:relative;}
   .variant-hint{font-size:.68rem;color:var(--wine);min-height:14px;}
   .measure-link{
     font-size:.7rem;letter-spacing:.06em;color:var(--muted);text-decoration:underline;
@@ -497,6 +508,62 @@
     text-align:center;margin-bottom:12px;
   }
   .admin-image-hint{font-size:.72rem;color:var(--muted);margin-top:8px;line-height:1.55;}
+
+  /* ---- cores do produto ---- */
+  .cor-linha{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .cor-linha input[type=color]{
+    width:42px;height:42px;flex:0 0 42px;border:1px solid var(--line);padding:0;background:none;cursor:pointer;
+  }
+  .cor-linha input[type=text]{
+    flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);
+    font-family:inherit;font-size:.88rem;color:var(--ink);background:#fff;
+  }
+  .cor-remover{
+    flex:0 0 38px;height:38px;border:1px solid var(--line);color:#a5555f;
+    display:flex;align-items:center;justify-content:center;font-size:.8rem;
+  }
+  .cor-remover:hover{background:#a5555f;color:#fff;border-color:#a5555f;}
+
+  /* ---- grade de estoque cor x tamanho ---- */
+  .grade-linha{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:12px;border:1px solid var(--line);background:#fff;margin-bottom:8px;
+  }
+  .grade-cor{
+    display:flex;align-items:center;gap:8px;flex:0 0 130px;
+    font-size:.86rem;color:var(--wine-deep);font-weight:500;
+  }
+  .grade-bolinha{
+    width:16px;height:16px;border-radius:50%;flex:0 0 16px;border:1px solid var(--line);
+  }
+  .grade-bolinha.vazia{background:repeating-linear-gradient(45deg,#eee,#eee 3px,#fff 3px,#fff 6px);}
+  .grade-celulas{display:flex;gap:8px;flex-wrap:wrap;flex:1;}
+  .admin-field .grade-celula{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    margin-bottom:0;text-transform:none;
+  }
+  .admin-field .grade-celula span{
+    display:block;font-size:.64rem;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:0;
+  }
+  .admin-field .grade-celula input[type=number]{
+    width:56px;padding:8px 4px;text-align:center;border:1px solid var(--line);
+    font-family:inherit;font-size:.88rem;color:var(--ink);background:#fbfbfb;
+  }
+  .admin-field .grade-celula.ativa input[type=number]{border-color:var(--wine);background:#fff;font-weight:600;}
+  .grade-celula input::placeholder{color:#c9c9c9;}
+  .grade-total{
+    font-size:.76rem;color:var(--muted);margin-top:10px;letter-spacing:.02em;
+  }
+
+  /* ---- estoque por variação ---- */
+  .estoque-variacoes{display:flex;flex-direction:column;gap:6px;width:100%;}
+  .estoque-var{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:6px 0;font-size:.84rem;color:var(--ink);
+  }
+  .estoque-var.zerada span{color:#a5555f;}
+  .estoque-var input{flex:0 0 88px;}
   .admin-save-btn{
     padding:13px 30px;background:var(--wine);color:var(--cream);font-size:.8rem;
     letter-spacing:.08em;text-transform:uppercase;margin-top:6px;
@@ -732,6 +799,11 @@
     .admin-size-chip{padding:11px 18px;font-size:.84rem;}
     .admin-image-drop{padding:22px 14px;}
     .admin-image-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+    .grade-linha{flex-direction:column;align-items:stretch;gap:10px;padding:12px 10px;}
+    .grade-cor{flex:none;}
+    .admin-field .grade-celula input[type=number]{width:52px;font-size:16px;padding:9px 2px;}
+    .cor-linha input[type=text]{font-size:16px;}
+    .estoque-var input{flex:0 0 78px;}
     .admin-image-acts button{padding:7px 2px;}
     .admin-color-grid{grid-template-columns:1fr;gap:10px;}
     .admin-color-card{padding:12px;}
@@ -1070,6 +1142,55 @@ function productImages(p){
   if(p.image) return [p.image];
   return [];
 }
+/* ============================================================
+   GRADE DE VARIAÇÕES (cor x tamanho)
+
+   p.variacoes = [{cor:"Vinho", tamanho:"P", estoque:3}, ...]
+
+   Só existe uma entrada pras combinações que a loja realmente vende.
+   Combinação ausente = não vendemos. estoque 0 = esgotado.
+   Produtos antigos (sem variacoes) continuam funcionando com o
+   estoque único do campo p.stock.
+   ============================================================ */
+function temGrade(p){
+  return Array.isArray(p.variacoes) && p.variacoes.length > 0;
+}
+function mesmoValor(a, b){
+  return (a == null ? null : a) === (b == null ? null : b);
+}
+function acharVariacao(p, cor, tamanho){
+  if(!temGrade(p)) return null;
+  return p.variacoes.find(v => mesmoValor(v.cor, cor) && mesmoValor(v.tamanho, tamanho)) || null;
+}
+/* tamanhos que existem numa cor, na ordem em que o produto lista */
+function tamanhosDaCor(p, cor){
+  if(!temGrade(p)) return p.sizes || [];
+  const disponiveis = p.variacoes
+    .filter(v => mesmoValor(v.cor, cor))
+    .map(v => v.tamanho)
+    .filter(t => t != null);
+  if(!disponiveis.length) return [];
+  const ordem = p.sizes && p.sizes.length ? p.sizes : disponiveis;
+  return ordem.filter(t => disponiveis.indexOf(t) !== -1);
+}
+/* quantas unidades existem de uma combinação */
+function estoqueDaVariacao(p, cor, tamanho){
+  if(!temGrade(p)) return p.stock == null ? Infinity : p.stock;
+  const v = acharVariacao(p, cor, tamanho);
+  return v ? (v.estoque || 0) : 0;
+}
+/* soma de tudo que existe numa cor — serve pra apagar a bolinha esgotada */
+function estoqueDaCor(p, cor){
+  if(!temGrade(p)) return p.stock == null ? Infinity : p.stock;
+  return p.variacoes
+    .filter(v => mesmoValor(v.cor, cor))
+    .reduce((soma, v) => soma + (v.estoque || 0), 0);
+}
+function estoqueTotal(p){
+  if(!temGrade(p)) return p.stock == null ? 0 : p.stock;
+  return p.variacoes.reduce((soma, v) => soma + (v.estoque || 0), 0);
+}
+
 function esc(v){
   return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
@@ -1175,6 +1296,7 @@ function linhaParaProduto(row){
     sizes: (row.sizes && row.sizes.length) ? row.sizes : undefined,
     colors: (row.colors && row.colors.length) ? row.colors : undefined,
     images: (row.images && row.images.length) ? row.images : undefined,
+    variacoes: (row.variacoes && row.variacoes.length) ? row.variacoes : undefined,
     stock: row.stock == null ? 0 : Number(row.stock),
     available: row.available !== false
   };
@@ -1192,6 +1314,7 @@ function produtoParaLinha(p){
     sizes: (p.sizes && p.sizes.length) ? p.sizes : null,
     colors: (p.colors && p.colors.length) ? p.colors : null,
     images: fotos.length ? fotos : null,
+    variacoes: (p.variacoes && p.variacoes.length) ? p.variacoes : null,
     stock: p.stock == null ? 0 : p.stock,
     available: p.available !== false
   };
@@ -1282,32 +1405,54 @@ function renderCatBar(){
   });
 }
 
+/* pastilhas de tamanho da cor que está escolhida no momento */
+function htmlDosTamanhos(p, sel){
+  const lista = tamanhosDaCor(p, sel.color || null);
+  if(!lista.length) return '';
+  return lista.map(t=>{
+    const resta = estoqueDaVariacao(p, sel.color || null, t);
+    const esgotado = resta <= 0;
+    return `<button class="size-pill ${sel.size===t?'selected':''} ${esgotado?'esgotada':''}"
+      data-id="${p.id}" data-size="${esc(t)}" ${esgotado?'disabled title="Esgotado nesta cor"':''}>${esc(t)}</button>`;
+  }).join('');
+}
+
 function productCardHTML(p){
   const sel = selections[p.id] || {};
-  if(p.sizes && p.sizes.length===1 && !sel.size) sel.size = p.sizes[0];
   const hasColorChoice = p.colors && p.colors.length>1;
-  if(p.colors && p.colors.length===1 && !sel.color) sel.color = p.colors[0].name;
-  if(p.colors && p.colors.length>1 && !sel.color) sel.color = p.colors[0].name;
+  if(p.colors && p.colors.length && !sel.color) sel.color = p.colors[0].name;
+
+  // se a cor escolhida não tem o tamanho selecionado, limpa a escolha
+  const tamanhosVisiveis = tamanhosDaCor(p, sel.color || null);
+  if(sel.size && tamanhosVisiveis.indexOf(sel.size) === -1) sel.size = undefined;
+  if(!sel.size && tamanhosVisiveis.length === 1 && estoqueDaVariacao(p, sel.color || null, tamanhosVisiveis[0]) > 0){
+    sel.size = tamanhosVisiveis[0];
+  }
   selections[p.id] = sel;
 
   const activeColorObj = p.colors ? p.colors.find(c=>c.name===sel.color) : null;
   const photos = productImages(p);
   const slides = photos.length ? photos : [placeholderImg(activeColorObj ? activeColorObj.hex : undefined)];
-  const soldOut = (p.stock !== undefined && p.stock <= 0);
+  const soldOut = estoqueTotal(p) <= 0;
 
-  const sizeRow = p.sizes ? `
+  const sizeRow = tamanhosVisiveis.length ? `
     <div>
       <span class="variant-label">Tamanho</span>
-      <div class="size-row">
-        ${p.sizes.map(s=>`<button class="size-pill ${sel.size===s?'selected':''}" data-id="${p.id}" data-size="${s}">${s}</button>`).join('')}
+      <div class="size-row" data-tamanhos="${p.id}">
+        ${htmlDosTamanhos(p, sel)}
       </div>
     </div>` : '';
 
   const colorRow = hasColorChoice ? `
     <div>
-      <span class="variant-label">Cor${sel.color?` — ${sel.color}`:''}</span>
+      <span class="variant-label">Cor${sel.color?` — ${esc(sel.color)}`:''}</span>
       <div class="color-row">
-        ${p.colors.map(c=>`<button class="color-dot ${sel.color===c.name?'selected':''}" style="background:${c.hex}" data-id="${p.id}" data-color="${c.name}" title="${c.name}"></button>`).join('')}
+        ${p.colors.map(c=>{
+          const acabou = estoqueDaCor(p, c.name) <= 0;
+          return `<button class="color-dot ${sel.color===c.name?'selected':''} ${acabou?'esgotada':''}"
+            style="background:${c.hex}" data-id="${p.id}" data-color="${esc(c.name)}"
+            title="${esc(c.name)}${acabou?' — esgotada':''}"></button>`;
+        }).join('')}
       </div>
     </div>` : '';
 
@@ -1346,9 +1491,74 @@ function productCardHTML(p){
   `;
 }
 
+/* Tamanho e cor são ligados por delegação: ao trocar a cor as pastilhas
+   de tamanho são redesenhadas, então não dá pra prender o evento em cada
+   botão — eles deixam de existir. */
+let eventosDeVarianteLigados = false;
+function ligarEventosDeVariante(){
+  if(eventosDeVarianteLigados) return;
+  eventosDeVarianteLigados = true;
+  const grid = document.getElementById('productGrid');
+  if(!grid) return;
+
+  grid.addEventListener('click', (e)=>{
+    const pastilha = e.target.closest('.size-pill');
+    if(pastilha){
+      if(pastilha.disabled) return;
+      const id = Number(pastilha.dataset.id);
+      selections[id] = selections[id] || {};
+      selections[id].size = pastilha.dataset.size;
+      pastilha.parentElement.querySelectorAll('.size-pill').forEach(b=>b.classList.remove('selected'));
+      pastilha.classList.add('selected');
+      const dica = grid.querySelector(`.variant-hint[data-hint="${id}"]`);
+      if(dica) dica.textContent = '';
+      return;
+    }
+
+    const bolinha = e.target.closest('.color-dot');
+    if(bolinha){
+      const id = Number(bolinha.dataset.id);
+      const p = products.find(pr=>pr.id===id);
+      if(!p) return;
+      const sel = selections[id] = selections[id] || {};
+      sel.color = bolinha.dataset.color;
+
+      bolinha.parentElement.querySelectorAll('.color-dot').forEach(b=>b.classList.remove('selected'));
+      bolinha.classList.add('selected');
+
+      const card = bolinha.closest('.card');
+      card.querySelectorAll('.variant-label').forEach(l=>{
+        if(l.textContent.indexOf('Cor') === 0) l.textContent = `Cor — ${sel.color}`;
+      });
+
+      // a cor nova pode ter outros tamanhos: redesenha as pastilhas
+      const caixaTamanhos = card.querySelector(`[data-tamanhos="${id}"]`);
+      const lista = tamanhosDaCor(p, sel.color);
+      if(sel.size && lista.indexOf(sel.size) === -1) sel.size = undefined;
+      if(!sel.size && lista.length === 1 && estoqueDaVariacao(p, sel.color, lista[0]) > 0) sel.size = lista[0];
+      if(caixaTamanhos){
+        caixaTamanhos.innerHTML = htmlDosTamanhos(p, sel);
+        const bloco = caixaTamanhos.parentElement;
+        if(bloco) bloco.style.display = lista.length ? '' : 'none';
+      }
+
+      if(!productImages(p).length){
+        const corObj = p.colors.find(c=>c.name===sel.color);
+        const img = card.querySelector('.card-media img');
+        if(img && corObj) img.src = placeholderImg(corObj.hex);
+      }
+
+      const dica = grid.querySelector(`.variant-hint[data-hint="${id}"]`);
+      if(dica) dica.textContent = lista.length ? '' : 'Sem tamanhos nessa cor no momento';
+      return;
+    }
+  });
+}
+
 let observer;
 function renderGrid(){
   const grid = document.getElementById('productGrid');
+  ligarEventosDeVariante();
   const catsToShow = activeCat === "Todos" ? categories.filter(c => c !== "Todos") : [activeCat];
 
   grid.innerHTML = catsToShow.map(cat=>{
@@ -1366,39 +1576,6 @@ function renderGrid(){
     `;
   }).join('');
 
-  grid.querySelectorAll('.size-pill').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const id = Number(btn.dataset.id);
-      selections[id] = selections[id] || {};
-      selections[id].size = btn.dataset.size;
-      btn.parentElement.querySelectorAll('.size-pill').forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected');
-      const hint = document.querySelector(`.variant-hint[data-hint="${id}"]`);
-      if(hint) hint.textContent = '';
-    });
-  });
-
-  grid.querySelectorAll('.color-dot').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const id = Number(btn.dataset.id);
-      const p = products.find(pr=>pr.id===id);
-      selections[id] = selections[id] || {};
-      selections[id].color = btn.dataset.color;
-      btn.parentElement.querySelectorAll('.color-dot').forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected');
-      const card = btn.closest('.card');
-      const labels = card.querySelectorAll('.variant-label');
-      labels.forEach(l=>{ if(l.textContent.indexOf('Cor')===0) l.textContent = `Cor — ${btn.dataset.color}`; });
-      if(!productImages(p).length){
-        const colorObj = p.colors.find(c=>c.name===btn.dataset.color);
-        const img = card.querySelector('.card-media img');
-        if(img && colorObj) img.src = placeholderImg(colorObj.hex);
-      }
-      const hint = document.querySelector(`.variant-hint[data-hint="${id}"]`);
-      if(hint) hint.textContent = '';
-    });
-  });
-
   grid.querySelectorAll('.measure-link').forEach(btn=>{
     btn.addEventListener('click', openMeasure);
   });
@@ -1407,16 +1584,30 @@ function renderGrid(){
     btn.addEventListener('click', ()=>{
       const id = Number(btn.dataset.id);
       const p = products.find(pr=>pr.id===id);
-      if(p.stock !== undefined && p.stock <= 0) return;
+      if(estoqueTotal(p) <= 0) return;
       const sel = selections[id] || {};
       const hint = document.querySelector(`.variant-hint[data-hint="${id}"]`);
 
-      if(p.sizes && p.sizes.length>1 && !sel.size){
+      if(p.colors && p.colors.length>1 && !sel.color){
+        if(hint) hint.textContent = 'Escolha a cor';
+        return;
+      }
+
+      const tamanhosPossiveis = tamanhosDaCor(p, sel.color || null);
+      if(tamanhosPossiveis.length > 1 && !sel.size){
         if(hint) hint.textContent = 'Escolha o tamanho';
         return;
       }
-      if(p.colors && p.colors.length>1 && !sel.color){
-        if(hint) hint.textContent = 'Escolha a cor';
+      if(tamanhosPossiveis.length === 1 && !sel.size) sel.size = tamanhosPossiveis[0];
+
+      const resta = estoqueDaVariacao(p, sel.color || null, sel.size || null);
+      if(resta <= 0){
+        if(hint) hint.textContent = 'Essa combinação está esgotada';
+        return;
+      }
+      const jaNaSacola = cart.find(l=>l.key === `${p.id}__${sel.size||''}__${sel.color||''}`);
+      if(jaNaSacola && jaNaSacola.qty >= resta){
+        if(hint) hint.textContent = `Só temos ${resta} nessa opção`;
         return;
       }
 
@@ -1530,7 +1721,7 @@ function renderCart(){
       if(!line) return;
       if(op==='inc'){
         const prod = products.find(pr=>pr.id===line.id);
-        const cap = (prod && prod.stock !== undefined) ? prod.stock : Infinity;
+        const cap = prod ? estoqueDaVariacao(prod, line.color || null, line.size || null) : Infinity;
         if(line.qty < cap) line.qty++;
       }
       if(op==='dec') line.qty--;
@@ -1663,6 +1854,8 @@ carregamentoInicial.catch(()=>{}); // o erro já é tratado dentro de bootLoja
 let editingProductId = null;
 let formSizes = [];
 let formImages = [];
+let formColors = [];   // [{name, hex}]
+let formGrade = {};    // { "cor||tamanho": quantidade } — ausente = não vendemos
 let pendingDeleteId = null;
 const ALL_CATEGORIES = ["Conjuntos","Sutiãs","Calcinhas","Acessórios"];
 const COMMON_SIZES = ["P","M","G","GG","Único"];
@@ -1812,8 +2005,8 @@ function switchAdminPanel(name){
 function renderOverviewPanel(){
   const total = products.length;
   const available = products.filter(p=>p.available!==false).length;
-  const soldOut = products.filter(p=>p.stock!==undefined && p.stock<=0).length;
-  const totalStock = products.reduce((s,p)=>s+(p.stock||0),0);
+  const soldOut = products.filter(p=>estoqueTotal(p)<=0).length;
+  const totalStock = products.reduce((s,p)=>s+estoqueTotal(p),0);
   const statusConexao = MODO_LOCAL
     ? (BIBLIOTECA_FALHOU
       ? `<div class="admin-conexao local">
@@ -1855,7 +2048,7 @@ function renderProductsPanel(){
   `;
   const rows = document.getElementById('adminProductRows');
   rows.innerHTML = products.map(p=>{
-    const soldOut = p.stock!==undefined && p.stock<=0;
+    const soldOut = estoqueTotal(p) <= 0;
     const statusBadge = p.available===false
       ? `<span class="admin-badge hidden">Oculto</span>`
       : soldOut ? `<span class="admin-badge out">Esgotado</span>` : `<span class="admin-badge ok">Disponível</span>`;
@@ -1868,7 +2061,7 @@ function renderProductsPanel(){
         <td class="cel-nome">${p.name}</td>
         <td data-rotulo="Categoria">${p.cat}</td>
         <td data-rotulo="Preço">${money(p.price)}</td>
-        <td data-rotulo="Estoque">${p.stock !== undefined ? p.stock : '—'}</td>
+        <td data-rotulo="Estoque">${estoqueTotal(p)}${temGrade(p)?` <span class="cc-hex">(${p.variacoes.length} var.)</span>`:''}</td>
         <td data-rotulo="Status">${statusBadge}</td>
         <td class="cel-acoes">
           <div class="admin-row-actions">
@@ -1923,6 +2116,20 @@ document.getElementById('confirmDeleteYes').addEventListener('click', async ()=>
 function renderProductForm(p){
   formSizes = p && p.sizes ? p.sizes.slice() : [];
   formImages = p ? productImages(p).slice() : [];
+  formColors = p && p.colors ? p.colors.map(c=>({name:c.name, hex:c.hex})) : [];
+  formGrade = {};
+  if(p && temGrade(p)){
+    p.variacoes.forEach(v=>{ formGrade[chaveGrade(v.cor, v.tamanho)] = v.estoque; });
+  } else if(p){
+    // produto antigo: espalha o estoque único na primeira combinação
+    const cores = formColors.length ? formColors.map(c=>c.name) : [null];
+    const tams = formSizes.length ? formSizes : [null];
+    cores.forEach((cor, i)=>{
+      tams.forEach((t, j)=>{
+        formGrade[chaveGrade(cor, t)] = (i===0 && j===0) ? (p.stock || 0) : 0;
+      });
+    });
+  }
   const title = p ? 'Editar produto' : 'Adicionar produto';
 
   document.getElementById('panel-add').innerHTML = `
@@ -1968,6 +2175,15 @@ function renderProductForm(p){
       </div>
 
       <div class="admin-field">
+        <label>Cores</label>
+        <div id="coresLista"></div>
+        <button type="button" class="admin-mini-btn" id="addCorBtn" style="margin-top:10px;">+ Adicionar cor</button>
+        <div class="admin-image-hint">
+          Deixe sem nenhuma cor se a peça só tem uma versão.
+        </div>
+      </div>
+
+      <div class="admin-field">
         <label>Tamanhos disponíveis</label>
         <div class="admin-size-options" id="sizeChips">
           ${COMMON_SIZES.map(s=>`<div class="admin-size-chip ${formSizes.includes(s)?'on':''}" data-size="${s}">${s}</div>`).join('')}
@@ -1975,8 +2191,12 @@ function renderProductForm(p){
       </div>
 
       <div class="admin-field">
-        <label>Quantidade em estoque</label>
-        <input type="number" min="0" step="1" id="f-stock" value="${p && p.stock!==undefined ? p.stock : 0}">
+        <label>Estoque por cor e tamanho</label>
+        <div id="gradeEstoque"></div>
+        <div class="admin-image-hint">
+          Preencha só o que você vende. <strong>Campo em branco</strong> = não tem essa
+          combinação (nem aparece na loja). <strong>Zero</strong> = tem, mas está esgotado.
+        </div>
       </div>
 
       <div class="admin-field">
@@ -1997,13 +2217,29 @@ function renderProductForm(p){
   document.querySelectorAll('#sizeChips .admin-size-chip').forEach(chip=>{
     chip.addEventListener('click', ()=>{
       const s = chip.dataset.size;
-      if(formSizes.includes(s)) formSizes = formSizes.filter(x=>x!==s);
-      else formSizes.push(s);
+      if(formSizes.includes(s)){
+        formSizes = formSizes.filter(x=>x!==s);
+        // some com o estoque das combinações desse tamanho
+        const cores = formColors.length ? formColors.map(c=>c.name) : [null];
+        cores.forEach(cor=>{ delete formGrade[chaveGrade(cor, s)]; });
+      } else {
+        // mantém a ordem P, M, G, GG, Único
+        formSizes = COMMON_SIZES.filter(x => x === s || formSizes.includes(x));
+      }
       chip.classList.toggle('on');
+      renderGradeEstoque();
     });
   });
 
   renderImageGrid();
+  renderCoresLista();
+  renderGradeEstoque();
+
+  document.getElementById('addCorBtn').addEventListener('click', ()=>{
+    formColors.push({ name:'', hex:'#7A2A42' });
+    renderCoresLista();
+    renderGradeEstoque();
+  });
 
   const dropText = document.getElementById('imageDropText');
   const dropTextHTML = dropText.innerHTML;
@@ -2041,7 +2277,8 @@ function renderProductForm(p){
     const price = parseFloat(document.getElementById('f-price').value);
     const oldPriceRaw = document.getElementById('f-oldprice').value;
     const oldPrice = oldPriceRaw ? parseFloat(oldPriceRaw) : undefined;
-    const stock = parseInt(document.getElementById('f-stock').value, 10) || 0;
+    const variacoes = montarVariacoes();
+    const stock = variacoes.reduce((t,v)=>t+v.estoque, 0);
     const description = document.getElementById('f-desc').value.trim();
     const available = document.getElementById('f-available').checked;
     const msg = document.getElementById('saveProductMsg');
@@ -2056,6 +2293,17 @@ function renderProductForm(p){
       msg.textContent = 'O preço promocional precisa ser menor que o preço original — ou deixe em branco.';
       return;
     }
+    if(formColors.some(c => !(c.name || '').trim())){
+      msg.style.color = '#a5555f';
+      msg.textContent = 'Dê um nome pra cada cor (ex: Vinho, Preto) ou remova a que está em branco.';
+      return;
+    }
+    const nomesDeCor = formColors.map(c=>(c.name||'').trim().toLowerCase());
+    if(new Set(nomesDeCor).size !== nomesDeCor.length){
+      msg.style.color = '#a5555f';
+      msg.textContent = 'Tem duas cores com o mesmo nome — troque uma delas.';
+      return;
+    }
 
     let off = undefined;
     if(oldPrice){
@@ -2063,9 +2311,15 @@ function renderProductForm(p){
       off = `−${pct}%`;
     }
 
+    const coresLimpas = formColors
+      .filter(c => (c.name || '').trim())
+      .map(c => ({ name: c.name.trim(), hex: c.hex || '#7A2A42' }));
+
     const dados = {
       name, cat, price, oldPrice, off,
       sizes: formSizes.length ? formSizes : undefined,
+      colors: coresLimpas.length ? coresLimpas : undefined,
+      variacoes: variacoes.length ? variacoes : undefined,
       images: formImages.length ? formImages.slice() : undefined,
       stock, description, available
     };
@@ -2082,6 +2336,8 @@ function renderProductForm(p){
           Object.assign(existing, dados);
           delete existing.image;
           if(!dados.images) delete existing.images;
+          if(!dados.colors) delete existing.colors;
+          if(!dados.variacoes) delete existing.variacoes;
         } else {
           const nextId = products.length ? Math.max(...products.map(p=>p.id)) + 1 : 1;
           products.push(Object.assign({ id: nextId }, dados));
@@ -2119,6 +2375,129 @@ function renderProductForm(p){
       btn.textContent = textoOriginal;
     }
   });
+}
+
+/* ---------- cores do produto ---------- */
+function chaveGrade(cor, tamanho){
+  return (cor == null ? '' : cor) + '||' + (tamanho == null ? '' : tamanho);
+}
+
+function renderCoresLista(){
+  const caixa = document.getElementById('coresLista');
+  if(!caixa) return;
+  if(!formColors.length){
+    caixa.innerHTML = `<div class="admin-image-empty">Nenhuma cor — a peça é vendida numa versão só.</div>`;
+    return;
+  }
+  caixa.innerHTML = formColors.map((c,i)=>`
+    <div class="cor-linha">
+      <input type="color" value="${c.hex || '#7A2A42'}" data-cor-hex="${i}" aria-label="Cor">
+      <input type="text" value="${esc(c.name)}" data-cor-nome="${i}" placeholder="Nome da cor (ex: Vinho)">
+      <button type="button" class="cor-remover" data-cor-remover="${i}" aria-label="Remover cor">&#10005;</button>
+    </div>
+  `).join('');
+
+  caixa.querySelectorAll('[data-cor-hex]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      formColors[Number(inp.dataset.corHex)].hex = inp.value;
+      renderGradeEstoque();
+    });
+  });
+  caixa.querySelectorAll('[data-cor-nome]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const i = Number(inp.dataset.corNome);
+      const anterior = formColors[i].name;
+      const novo = inp.value;
+      // leva o estoque já digitado junto com o novo nome
+      if(anterior !== novo){
+        const tams = formSizes.length ? formSizes : [null];
+        tams.forEach(t=>{
+          const de = chaveGrade(anterior, t), para = chaveGrade(novo, t);
+          if(formGrade[de] !== undefined){ formGrade[para] = formGrade[de]; delete formGrade[de]; }
+        });
+      }
+      formColors[i].name = novo;
+      renderGradeEstoque();
+    });
+  });
+  caixa.querySelectorAll('[data-cor-remover]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const i = Number(btn.dataset.corRemover);
+      const removida = formColors[i].name;
+      const tams = formSizes.length ? formSizes : [null];
+      tams.forEach(t=>{ delete formGrade[chaveGrade(removida, t)]; });
+      formColors.splice(i, 1);
+      renderCoresLista();
+      renderGradeEstoque();
+    });
+  });
+}
+
+/* ---------- grade de estoque (cor x tamanho) ---------- */
+function renderGradeEstoque(){
+  const caixa = document.getElementById('gradeEstoque');
+  if(!caixa) return;
+
+  const cores = formColors.length ? formColors : [null];
+  const tams = formSizes.length ? formSizes : [null];
+
+  caixa.innerHTML = cores.map((c, i)=>{
+    const nomeCor = c ? c.name : null;
+    const cabecalho = c
+      ? `<div class="grade-cor"><span class="grade-bolinha" style="background:${c.hex||'#7A2A42'}"></span>${esc(c.name || 'Sem nome')}</div>`
+      : `<div class="grade-cor"><span class="grade-bolinha vazia"></span>Versão única</div>`;
+    const celulas = tams.map(t=>{
+      const chave = chaveGrade(nomeCor, t);
+      const valor = formGrade[chave];
+      const preenchido = valor !== undefined && valor !== '';
+      return `
+        <label class="grade-celula ${preenchido?'ativa':''}">
+          <span>${t == null ? 'Qtd.' : esc(t)}</span>
+          <input type="number" min="0" step="1" inputmode="numeric"
+            data-grade="${esc(chave)}" value="${preenchido ? valor : ''}" placeholder="—">
+        </label>`;
+    }).join('');
+    return `<div class="grade-linha">${cabecalho}<div class="grade-celulas">${celulas}</div></div>`;
+  }).join('');
+
+  caixa.querySelectorAll('[data-grade]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const chave = inp.dataset.grade;
+      if(inp.value === ''){ delete formGrade[chave]; }
+      else { formGrade[chave] = Math.max(0, parseInt(inp.value, 10) || 0); }
+      inp.closest('.grade-celula').classList.toggle('ativa', inp.value !== '');
+      atualizarTotalGrade();
+    });
+  });
+
+  const total = document.createElement('div');
+  total.className = 'grade-total';
+  total.id = 'gradeTotal';
+  caixa.appendChild(total);
+  atualizarTotalGrade();
+}
+
+function atualizarTotalGrade(){
+  const alvo = document.getElementById('gradeTotal');
+  if(!alvo) return;
+  const chaves = Object.keys(formGrade);
+  const soma = chaves.reduce((t, k)=> t + (Number(formGrade[k]) || 0), 0);
+  alvo.textContent = `${chaves.length} combinação(ões) à venda · ${soma} peça(s) no total`;
+}
+
+/* monta o array de variações a partir do que está na tela */
+function montarVariacoes(){
+  const cores = formColors.length ? formColors.map(c=>c.name) : [null];
+  const tams = formSizes.length ? formSizes : [null];
+  const lista = [];
+  cores.forEach(cor=>{
+    tams.forEach(t=>{
+      const v = formGrade[chaveGrade(cor, t)];
+      if(v === undefined || v === '') return;
+      lista.push({ cor: cor || null, tamanho: t || null, estoque: Math.max(0, Number(v) || 0) });
+    });
+  });
+  return lista;
 }
 
 /* ---------- grade de fotos do formulário ---------- */
@@ -2167,33 +2546,77 @@ function renderStockPanel(){
     </div>
   `;
   const rows = document.getElementById('stockRows');
-  rows.innerHTML = products.map(p=>`
+  rows.innerHTML = products.map(p=>{
+    const total = estoqueTotal(p);
+    let corpo;
+    if(temGrade(p)){
+      corpo = `<div class="estoque-variacoes">` + p.variacoes.map((v, i)=>{
+        const rotulo = [v.cor, v.tamanho].filter(Boolean).join(' · ') || 'Versão única';
+        return `
+          <label class="estoque-var ${(v.estoque||0)<=0?'zerada':''}">
+            <span>${esc(rotulo)}</span>
+            <input type="number" min="0" step="1" inputmode="numeric" class="campo-estoque"
+              data-var-produto="${p.id}" data-var-indice="${i}" value="${v.estoque||0}">
+          </label>`;
+      }).join('') + `</div>`;
+    } else {
+      corpo = `<input type="number" min="0" step="1" data-stock-id="${p.id}" value="${p.stock!==undefined?p.stock:0}" class="campo-estoque">`;
+    }
+    return `
     <tr>
       <td class="cel-nome">${p.name}</td>
-      <td data-rotulo="Estoque"><input type="number" min="0" step="1" data-stock-id="${p.id}" value="${p.stock!==undefined?p.stock:0}" class="campo-estoque"></td>
-      <td data-rotulo="Status"><span id="stock-status-${p.id}">${(p.stock||0)<=0?'<span class="admin-badge out">Esgotado</span>':'<span class="admin-badge ok">Disponível</span>'}</span></td>
-    </tr>
-  `).join('');
-  rows.querySelectorAll('[data-stock-id]').forEach(input=>{
-    input.addEventListener('change', async ()=>{
-      const id = Number(input.dataset.stockId);
-      const p = products.find(pr=>pr.id===id);
-      const anterior = p.stock;
-      p.stock = parseInt(input.value,10) || 0;
-      document.getElementById('stock-status-'+id).innerHTML = p.stock<=0
-        ? '<span class="admin-badge out">Esgotado</span>' : '<span class="admin-badge ok">Disponível</span>';
-      try{
-        if(!MODO_LOCAL) await atualizarProduto(id, p);
-        refreshStorefront();
-        renderOverviewPanel();
-      }catch(e){
-        console.error(e);
-        p.stock = anterior;
+      <td data-rotulo="${temGrade(p)?'Por variação':'Estoque'}" class="${temGrade(p)?'cel-variacoes':''}">${corpo}</td>
+      <td data-rotulo="Total"><span id="stock-status-${p.id}">${total<=0?'<span class="admin-badge out">Esgotado</span>':`<span class="admin-badge ok">${total} no total</span>`}</span></td>
+    </tr>`;
+  }).join('');
+
+  function pintarStatus(p){
+    const total = estoqueTotal(p);
+    const alvo = document.getElementById('stock-status-'+p.id);
+    if(alvo) alvo.innerHTML = total<=0
+      ? '<span class="admin-badge out">Esgotado</span>'
+      : `<span class="admin-badge ok">${total} no total</span>`;
+  }
+
+  async function gravarEstoque(p, desfazer){
+    try{
+      if(!MODO_LOCAL) await atualizarProduto(p.id, p);
+      refreshStorefront();
+      renderOverviewPanel();
+    }catch(e){
+      console.error(e);
+      desfazer();
+      pintarStatus(p);
+      alert('Não consegui salvar o estoque: ' + (e.message || 'erro de conexão'));
+    }
+  }
+
+  rows.querySelectorAll('[data-var-produto]').forEach(input=>{
+    input.addEventListener('change', ()=>{
+      const p = products.find(pr=>pr.id===Number(input.dataset.varProduto));
+      const i = Number(input.dataset.varIndice);
+      const anterior = p.variacoes[i].estoque;
+      p.variacoes[i].estoque = Math.max(0, parseInt(input.value,10) || 0);
+      input.value = p.variacoes[i].estoque;
+      p.stock = estoqueTotal(p);
+      input.closest('.estoque-var').classList.toggle('zerada', p.variacoes[i].estoque <= 0);
+      pintarStatus(p);
+      gravarEstoque(p, ()=>{
+        p.variacoes[i].estoque = anterior;
+        p.stock = estoqueTotal(p);
         input.value = anterior;
-        document.getElementById('stock-status-'+id).innerHTML = (anterior||0)<=0
-          ? '<span class="admin-badge out">Esgotado</span>' : '<span class="admin-badge ok">Disponível</span>';
-        alert('Não consegui salvar o estoque: ' + (e.message || 'erro de conexão'));
-      }
+      });
+    });
+  });
+
+  rows.querySelectorAll('[data-stock-id]').forEach(input=>{
+    input.addEventListener('change', ()=>{
+      const p = products.find(pr=>pr.id===Number(input.dataset.stockId));
+      const anterior = p.stock;
+      p.stock = Math.max(0, parseInt(input.value,10) || 0);
+      input.value = p.stock;
+      pintarStatus(p);
+      gravarEstoque(p, ()=>{ p.stock = anterior; input.value = anterior; });
     });
   });
 }
