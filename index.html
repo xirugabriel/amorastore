@@ -408,10 +408,13 @@
   }
   .admin-brand{font-size:1.3rem;color:var(--cream);margin-bottom:18px;}
   .admin-brand .kicker{color:var(--gold-soft,#E4CE8C);margin-top:2px;}
-  .admin-nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+  .admin-nav{display:flex;flex-direction:column;align-items:stretch;gap:2px;flex:1;height:auto;}
   .admin-nav-btn{
+    display:flex;align-items:center;gap:9px;
     text-align:left;padding:11px 12px;font-size:.84rem;color:#E7CBD1;border-radius:4px;transition:.15s;
   }
+  .admin-nav-btn .nav-ico{font-size:.95rem;line-height:1;}
+  .admin-nav-btn .nav-curto{display:none;}
   .admin-nav-btn:hover{background:rgba(255,255,255,.08);}
   .admin-nav-btn.active{background:var(--cream);color:var(--wine-deep);font-weight:600;}
   .admin-logout-btn{
@@ -442,6 +445,7 @@
   .admin-table th, .admin-table td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:.86rem;}
   .admin-table th{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
   .admin-table img{width:44px;height:56px;object-fit:cover;}
+  .campo-estoque{width:80px;padding:6px 8px;border:1px solid var(--line);font-family:inherit;color:var(--ink);}
   .admin-row-actions{display:flex;gap:8px;}
   .admin-mini-btn{
     padding:6px 12px;font-size:.72rem;border:1px solid var(--wine);color:var(--wine);
@@ -511,16 +515,6 @@
   }
   .admin-reset-btn:hover{background:#a5555f;color:#fff;}
 
-  @media(max-width:820px){
-    .admin-shell{flex-direction:column;}
-    .admin-sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;align-items:center;padding:14px;}
-    .admin-brand{margin-bottom:0;margin-right:auto;}
-    .admin-nav{flex-direction:row;flex-wrap:wrap;flex:none;width:100%;order:3;margin-top:10px;}
-    .admin-nav-btn{padding:8px 10px;font-size:.76rem;}
-    .admin-back-link, .admin-logout-btn{order:2;}
-    .admin-main{padding:20px 16px;}
-    .admin-form{padding:18px;}
-  }
 
   /* ================= MOBILE ================= */
   html{-webkit-text-size-adjust:100%;}
@@ -633,15 +627,128 @@
     .add-btn{font-size:.62rem;letter-spacing:.02em;padding:14px 4px;}
   }
 
-  /* ---- admin no celular ---- */
+  /* ================= PAINEL NO CELULAR ================= */
   @media(max-width:820px){
-    .admin-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-    .admin-table{min-width:560px;}
+    .admin-shell{flex-direction:column;min-height:100vh;}
+
+    /* topo enxuto: marca + atalhos */
+    .admin-sidebar{
+      width:100%;height:auto;position:sticky;top:0;z-index:30;
+      flex-direction:row;align-items:center;gap:10px;
+      padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));
+    }
+    .admin-brand{margin:0 auto 0 0;font-size:1.05rem;line-height:1.15;}
+    .admin-brand .kicker{font-size:.55rem;letter-spacing:.18em;margin-top:0;}
+    .admin-back-link{margin-top:0;font-size:.72rem;white-space:nowrap;}
+    .admin-logout-btn{margin-top:0;padding:8px 12px;font-size:.64rem;white-space:nowrap;}
+
+    /* navegação vira barra de baixo, estilo aplicativo */
+    .admin-nav{
+      position:fixed;left:0;right:0;bottom:0;z-index:40;
+      flex-direction:row;flex:none;gap:0;height:auto;
+      background:var(--wine-deep);border-top:1px solid rgba(255,255,255,.14);
+      padding:6px 3px;padding-bottom:calc(6px + env(safe-area-inset-bottom));
+      box-shadow:0 -6px 18px rgba(46,17,25,.2);
+    }
+    .admin-nav-btn{
+      flex:1 1 0;min-width:0;
+      flex-direction:column;align-items:center;justify-content:center;gap:3px;
+      text-align:center;padding:7px 1px;border-radius:8px;
+      font-size:.56rem;letter-spacing:.01em;line-height:1.1;
+    }
+    .admin-nav-btn .nav-ico{font-size:1.1rem;}
+    .admin-nav-btn .nav-longo{display:none;}
+    .admin-nav-btn .nav-curto{display:block;}
+    .admin-nav-btn.active{background:rgba(251,240,225,.18);color:var(--cream);font-weight:600;}
+
+    .admin-main{padding:18px 14px calc(86px + env(safe-area-inset-bottom));}
+    .admin-panel h2{font-size:1.25rem;margin-bottom:16px;}
+    .admin-conexao{font-size:.78rem;padding:12px 14px;margin-bottom:18px;}
+
+    /* números da visão geral */
+    .admin-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:22px;}
+    .admin-stat{padding:14px 12px;}
+    .admin-stat .n{font-size:1.5rem;}
+    .admin-stat .l{font-size:.68rem;line-height:1.35;}
+
+    /* tabelas viram cartões */
+    .admin-table-wrap{overflow:visible;}
+    .admin-table{min-width:0;display:block;background:transparent;}
+    .admin-table thead{display:none;}
+    .admin-table tbody{display:block;}
+    .admin-table tr{
+      display:block;background:#fff;border:1px solid var(--line);
+      padding:14px;margin-bottom:10px;
+    }
+    .admin-table td{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      border:none;border-bottom:1px solid var(--cream-soft);
+      padding:8px 0;font-size:.86rem;
+    }
+    .admin-table td:last-child{border-bottom:none;}
+    .admin-table td[data-rotulo]::before{
+      content:attr(data-rotulo);
+      font-size:.64rem;letter-spacing:.09em;text-transform:uppercase;
+      color:var(--muted);flex:0 0 auto;
+    }
+    .admin-table td.cel-nome{
+      display:block;font-family:'Fraunces',serif;font-weight:500;
+      font-size:1.02rem;color:var(--wine-deep);padding:0 0 10px;
+    }
+    .admin-table td.cel-acoes{padding-top:12px;}
+    .admin-row-actions{width:100%;display:flex;gap:8px;}
+    .admin-mini-btn{flex:1;padding:12px 8px;text-align:center;font-size:.74rem;}
+    .campo-estoque{width:88px;padding:9px 10px;text-align:center;font-size:16px;}
+
+    /* na lista de produtos, foto e nome dividem a primeira linha */
+    .tabela-produtos tr{
+      display:grid;grid-template-columns:56px 1fr;gap:0 12px;align-items:start;
+    }
+    /* foto ocupa a lateral; nome, categoria e preço ficam ao lado dela */
+    .tabela-produtos td.cel-foto{
+      grid-column:1;grid-row:1 / span 3;padding:0;border-bottom:none;display:block;
+    }
+    .tabela-produtos td.cel-foto img{width:56px;height:74px;}
+    .tabela-produtos td.cel-nome{
+      grid-column:2;grid-row:1;padding:0 0 5px;border-bottom:none;line-height:1.2;
+    }
+    .tabela-produtos td:nth-child(3){grid-column:2;grid-row:2;padding:3px 0;border-bottom:none;}
+    .tabela-produtos td:nth-child(4){grid-column:2;grid-row:3;padding:3px 0;border-bottom:none;}
+    .tabela-produtos td:nth-child(5){
+      grid-column:1/-1;border-top:1px solid var(--cream-soft);margin-top:11px;
+    }
+    .tabela-produtos td:nth-child(6),
+    .tabela-produtos td.cel-acoes{grid-column:1/-1;}
+
+    /* formulários */
+    .admin-form{padding:16px;max-width:100%;}
+    .admin-field{margin-bottom:16px;}
     .admin-login-box input,
     .admin-field input[type=text], .admin-field input[type=number],
-    .admin-field select, .admin-field textarea{font-size:16px;}
-    .admin-image-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
-    .admin-color-grid{grid-template-columns:1fr;}
+    .admin-field input[type=password],
+    .admin-field select, .admin-field textarea{font-size:16px;padding:12px;}
+    .admin-save-btn{width:100%;padding:15px;}
+    .admin-reset-btn{width:100%;padding:14px;}
+    .admin-size-chip{padding:11px 18px;font-size:.84rem;}
+    .admin-image-drop{padding:22px 14px;}
+    .admin-image-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+    .admin-image-acts button{padding:7px 2px;}
+    .admin-color-grid{grid-template-columns:1fr;gap:10px;}
+    .admin-color-card{padding:12px;}
+
+    /* login */
+    .admin-login{padding:20px 18px;}
+    .admin-login-box{padding:28px 20px;}
+
+    /* confirmação de exclusão */
+    #confirmDeleteOverlay .modal-close{padding:14px 10px;font-size:.76rem;}
+  }
+
+  @media(max-width:400px){
+    .admin-nav-btn{font-size:.52rem;}
+    .admin-nav-btn .nav-ico{font-size:1rem;}
+    .admin-brand{font-size:.95rem;}
+    .admin-logout-btn{padding:8px 9px;}
   }
 </style>
 </head>
@@ -844,12 +951,12 @@
       <aside class="admin-sidebar">
         <div class="admin-brand serif">amora <span class="kicker" style="display:block;">admin</span></div>
         <nav class="admin-nav">
-          <button data-panel="overview" class="admin-nav-btn active">📊 Visão geral</button>
-          <button data-panel="products" class="admin-nav-btn">🛍️ Produtos</button>
-          <button data-panel="add" class="admin-nav-btn">➕ Adicionar produto</button>
-          <button data-panel="stock" class="admin-nav-btn">📦 Estoque</button>
-          <button data-panel="appearance" class="admin-nav-btn">🎨 Aparência</button>
-          <button data-panel="settings" class="admin-nav-btn">⚙️ Configurações</button>
+          <button data-panel="overview" class="admin-nav-btn active"><span class="nav-ico">📊</span><span class="nav-longo">Visão geral</span><span class="nav-curto">Geral</span></button>
+          <button data-panel="products" class="admin-nav-btn"><span class="nav-ico">🛍️</span><span class="nav-longo">Produtos</span><span class="nav-curto">Peças</span></button>
+          <button data-panel="add" class="admin-nav-btn"><span class="nav-ico">➕</span><span class="nav-longo">Adicionar produto</span><span class="nav-curto">Novo</span></button>
+          <button data-panel="stock" class="admin-nav-btn"><span class="nav-ico">📦</span><span class="nav-longo">Estoque</span><span class="nav-curto">Estoque</span></button>
+          <button data-panel="appearance" class="admin-nav-btn"><span class="nav-ico">🎨</span><span class="nav-longo">Aparência</span><span class="nav-curto">Cores</span></button>
+          <button data-panel="settings" class="admin-nav-btn"><span class="nav-ico">⚙️</span><span class="nav-longo">Configurações</span><span class="nav-curto">Ajustes</span></button>
         </nav>
         <a href="#" class="admin-back-link" id="adminBackToStore">← Ver a loja</a>
         <button class="admin-logout-btn" id="adminLogoutBtn">Sair</button>
@@ -1740,7 +1847,7 @@ function renderProductsPanel(){
   document.getElementById('panel-products').innerHTML = `
     <h2>Produtos</h2>
     <div class="admin-table-wrap">
-      <table class="admin-table">
+      <table class="admin-table tabela-produtos">
         <thead><tr><th></th><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr></thead>
         <tbody id="adminProductRows"></tbody>
       </table>
@@ -1757,13 +1864,13 @@ function renderProductsPanel(){
     const extra = imgs.length > 1 ? `<span class="cc-hex">+${imgs.length-1}</span>` : '';
     return `
       <tr>
-        <td><img src="${img}" alt="">${extra}</td>
-        <td>${p.name}</td>
-        <td>${p.cat}</td>
-        <td>${money(p.price)}</td>
-        <td>${p.stock !== undefined ? p.stock : '—'}</td>
-        <td>${statusBadge}</td>
-        <td>
+        <td class="cel-foto"><img src="${img}" alt="">${extra}</td>
+        <td class="cel-nome">${p.name}</td>
+        <td data-rotulo="Categoria">${p.cat}</td>
+        <td data-rotulo="Preço">${money(p.price)}</td>
+        <td data-rotulo="Estoque">${p.stock !== undefined ? p.stock : '—'}</td>
+        <td data-rotulo="Status">${statusBadge}</td>
+        <td class="cel-acoes">
           <div class="admin-row-actions">
             <button class="admin-mini-btn" data-edit="${p.id}">Editar</button>
             <button class="admin-mini-btn danger" data-del="${p.id}">Excluir</button>
@@ -2053,7 +2160,7 @@ function renderStockPanel(){
   document.getElementById('panel-stock').innerHTML = `
     <h2>Estoque</h2>
     <div class="admin-table-wrap">
-      <table class="admin-table">
+      <table class="admin-table tabela-estoque">
         <thead><tr><th>Produto</th><th>Estoque</th><th>Status</th></tr></thead>
         <tbody id="stockRows"></tbody>
       </table>
@@ -2062,9 +2169,9 @@ function renderStockPanel(){
   const rows = document.getElementById('stockRows');
   rows.innerHTML = products.map(p=>`
     <tr>
-      <td>${p.name}</td>
-      <td><input type="number" min="0" step="1" data-stock-id="${p.id}" value="${p.stock!==undefined?p.stock:0}" style="width:80px;padding:6px 8px;border:1px solid var(--line);"></td>
-      <td><span id="stock-status-${p.id}">${(p.stock||0)<=0?'<span class="admin-badge out">Esgotado</span>':'<span class="admin-badge ok">Disponível</span>'}</span></td>
+      <td class="cel-nome">${p.name}</td>
+      <td data-rotulo="Estoque"><input type="number" min="0" step="1" data-stock-id="${p.id}" value="${p.stock!==undefined?p.stock:0}" class="campo-estoque"></td>
+      <td data-rotulo="Status"><span id="stock-status-${p.id}">${(p.stock||0)<=0?'<span class="admin-badge out">Esgotado</span>':'<span class="admin-badge ok">Disponível</span>'}</span></td>
     </tr>
   `).join('');
   rows.querySelectorAll('[data-stock-id]').forEach(input=>{
