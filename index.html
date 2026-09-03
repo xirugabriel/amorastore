@@ -157,7 +157,7 @@
     border-bottom:1px solid var(--line);
   }
   .busca-campo{
-    flex:1;display:flex;align-items:center;gap:12px;
+    flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;
     background:var(--surface);border:1px solid var(--line);border-radius:var(--r-full);
     padding:0 20px;height:52px;
   }
@@ -166,6 +166,11 @@
     font-family:inherit;font-size:1rem;color:var(--ink);min-width:0;
   }
   .busca-campo input::placeholder{color:var(--muted);opacity:.7;}
+  .busca-fechar{
+    flex:0 0 46px;width:46px;height:46px;
+    border:1px solid var(--line);background:var(--surface);color:var(--wine);
+  }
+  .busca-fechar:hover{background:var(--wine);color:var(--cream);border-color:var(--wine);}
   .busca-corpo{flex:1;overflow-y:auto;padding:22px clamp(16px,5vw,44px) 60px;}
   .busca-sugestoes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
   .busca-chip{
@@ -394,6 +399,7 @@
     backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .3s var(--ease);
   }
   .ficha-fundo.aberta{opacity:1;pointer-events:auto;}
+  .ficha.arrastando{transition:none;}
   .ficha{
     position:fixed;z-index:101;background:var(--cream);
     left:50%;top:50%;transform:translate(-50%,-46%) scale(.97);
@@ -417,13 +423,20 @@
   .ficha-palco{
     position:relative;flex:1;overflow:hidden;min-height:0;
     background:var(--cream-soft);
+    touch-action:pan-y;
   }
+  .ficha-palco .quadro{
+    position:absolute;inset:0;z-index:1;
+    transition:transform .3s var(--ease-out);
+  }
+  .ficha-palco.arrastando .quadro{transition:none;}
   /* contain (e nao cover) pra nunca cortar a peca na ficha */
-  .ficha-palco img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1;}
+  .ficha-palco img{width:100%;height:100%;object-fit:contain;}
   /* a propria foto, borrada, preenche as faixas que sobram nas laterais */
   .ficha-palco .borrao{
     position:absolute;inset:0;z-index:0;object-fit:cover;
-    filter:blur(26px) saturate(1.25);transform:scale(1.2);opacity:.45;
+    filter:blur(34px) saturate(1.35) brightness(1.04);
+    transform:scale(1.25);opacity:.92;
   }
   .ficha-seta{
     position:absolute;top:50%;transform:translateY(-50%);z-index:2;
@@ -800,12 +813,22 @@
     }
     .ficha.aberta{transform:translateY(0);}
     .ficha::before{
-      content:'';position:absolute;top:9px;left:50%;transform:translateX(-50%);
-      width:42px;height:4px;border-radius:2px;background:var(--line);z-index:6;
+      content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
+      width:46px;height:5px;border-radius:3px;background:var(--line);z-index:6;
+      pointer-events:none;
+    }
+    /* faixa invisivel no topo, so pra dar area de pegada ao arrastar */
+    .ficha-pegada{
+      position:absolute;top:0;left:0;right:0;height:26px;z-index:5;
     }
     .ficha-corpo{display:flex;flex-direction:column;overflow-y:auto;}
     .ficha-galeria{flex:0 0 auto;}
-    .ficha-palco{aspect-ratio:4/5;flex:none;max-height:56vh;max-height:56dvh;}
+    /* a moldura assume a proporcao da propria foto (ver --ratio-foto no JS),
+       assim a peca encaixa sem faixa sobrando */
+    .ficha-palco{
+      aspect-ratio:var(--ratio-foto, 4/5);flex:none;
+      max-height:58vh;max-height:58dvh;
+    }
     .ficha-info{padding:22px 20px 26px;overflow:visible;}
     .ficha-nome{font-size:1.4rem;}
     .ficha-precos .price{font-size:1.3rem;}
@@ -1211,7 +1234,9 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="color:var(--muted)"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
       <input type="search" id="buscaInput" placeholder="Buscar peça, cor, tecido..." autocomplete="off">
     </div>
-    <button class="modal-close" id="fecharBusca" style="margin:0;">Fechar</button>
+    <button class="icone-btn busca-fechar" id="fecharBusca" aria-label="Fechar a busca">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+    </button>
   </div>
   <div class="busca-corpo">
     <div class="busca-sugestoes" id="buscaSugestoes"></div>
@@ -1366,6 +1391,7 @@
 
 <div class="ficha-fundo" id="fichaFundo"></div>
 <div class="ficha" id="ficha" role="dialog" aria-modal="true" aria-label="Detalhes do produto">
+  <div class="ficha-pegada"></div>
   <button class="ficha-fechar" id="fecharFicha" aria-label="Fechar">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
   </button>
@@ -2051,6 +2077,8 @@ function abrirFicha(id){
 }
 
 function fecharFicha(voltarHistorico){
+  ficha.style.transform = '';
+  fichaFundo.style.opacity = '';
   ficha.classList.remove('aberta');
   fichaFundo.classList.remove('aberta');
   fichaEstado = null;
@@ -2079,7 +2107,7 @@ function renderFicha(){
     <div class="ficha-galeria">
       <div class="ficha-palco">
         <img class="borrao" src="${slides[fichaEstado.foto]}" alt="" aria-hidden="true">
-        <img src="${slides[fichaEstado.foto]}" alt="${esc(p.name)}" id="fichaFoto">
+        <div class="quadro"><img src="${slides[fichaEstado.foto]}" alt="${esc(p.name)}" id="fichaFoto"></div>
         ${slides.length>1?`
           <button class="ficha-seta ant" data-foto="-1" aria-label="Foto anterior">&#8249;</button>
           <button class="ficha-seta prox" data-foto="1" aria-label="Próxima foto">&#8250;</button>`:''}
@@ -2163,6 +2191,23 @@ function renderFicha(){
     </div>`;
 
   ligarFicha(p, slides, maxQtd);
+  ajustarMolduraDaFoto();
+}
+
+/* Deixa a moldura com a mesma proporcao da foto (dentro de um limite),
+   pra peca encaixar sem sobrar faixa dos lados. */
+function ajustarMolduraDaFoto(){
+  const img = document.getElementById('fichaFoto');
+  const palco = document.querySelector('.ficha-palco');
+  if(!img || !palco) return;
+  const aplicar = ()=>{
+    if(!img.naturalWidth || !img.naturalHeight) return;
+    const proporcao = img.naturalWidth / img.naturalHeight;
+    const limitada = Math.max(0.58, Math.min(1.25, proporcao));
+    palco.style.setProperty('--ratio-foto', String(limitada));
+  };
+  if(img.complete) aplicar();
+  else img.addEventListener('load', aplicar, {once:true});
 }
 
 function ligarFicha(p, slides, maxQtd){
@@ -2257,6 +2302,104 @@ function adicionarPelaFicha(p){
 
 document.getElementById('fecharFicha').addEventListener('click', ()=>fecharFicha());
 fichaFundo.addEventListener('click', ()=>fecharFicha());
+
+/* ============================================================
+   GESTOS DA FICHA (celular)
+   - arrastar pro lado sobre a foto  -> troca a foto
+   - arrastar pra baixo              -> fecha a janela
+   O arrasto pra baixo so pega quando o conteudo ja esta no topo,
+   senao atrapalharia a rolagem normal.
+   ============================================================ */
+(function gestosDaFicha(){
+  const folha = ficha;
+  const corpo = document.getElementById('fichaCorpo');
+  let x0=0, y0=0, dx=0, dy=0, t0=0;
+  let modo = null;          // 'foto' | 'fechar' | 'rolar'
+  let noPalco = false;
+  let quadro = null;
+
+  const ehCelular = ()=> window.innerWidth <= 760;
+
+  folha.addEventListener('touchstart', (e)=>{
+    if(e.touches.length !== 1 || !folha.classList.contains('aberta')) return;
+    const t = e.touches[0];
+    x0 = t.clientX; y0 = t.clientY; dx = 0; dy = 0; t0 = Date.now();
+    modo = null;
+    noPalco = !!e.target.closest('.ficha-palco');
+    quadro = folha.querySelector('.quadro');
+  }, {passive:true});
+
+  folha.addEventListener('touchmove', (e)=>{
+    if(e.touches.length !== 1 || !folha.classList.contains('aberta')) return;
+    const t = e.touches[0];
+    dx = t.clientX - x0;
+    dy = t.clientY - y0;
+
+    if(modo === null){
+      if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if(noPalco && Math.abs(dx) > Math.abs(dy)) modo = 'foto';
+      else if(ehCelular() && dy > 0 && corpo.scrollTop <= 0) modo = 'fechar';
+      else modo = 'rolar';
+
+      if(modo !== 'rolar'){
+        folha.classList.add('arrastando');
+        const palco = folha.querySelector('.ficha-palco');
+        if(palco) palco.classList.add('arrastando');
+      }
+    }
+
+    if(modo === 'foto'){
+      e.preventDefault();
+      if(quadro) quadro.style.transform = `translateX(${dx * 0.35}px)`;
+    } else if(modo === 'fechar'){
+      e.preventDefault();
+      const puxada = Math.max(0, dy);
+      folha.style.transform = `translateY(${puxada}px)`;
+      fichaFundo.style.opacity = String(Math.max(0, 1 - puxada / 420));
+    }
+  }, {passive:false});
+
+  folha.addEventListener('touchend', ()=>{
+    if(!modo) return;
+    const palco = folha.querySelector('.ficha-palco');
+    folha.classList.remove('arrastando');
+    if(palco) palco.classList.remove('arrastando');
+    const rapido = (Date.now() - t0) < 320;
+
+    if(modo === 'foto'){
+      if(quadro) quadro.style.transform = '';
+      const totalFotos = folha.querySelectorAll('.ficha-mini').length || 1;
+      if(totalFotos > 1 && (Math.abs(dx) > 55 || (rapido && Math.abs(dx) > 28))){
+        fichaEstado.foto = (fichaEstado.foto + (dx < 0 ? 1 : -1) + totalFotos) % totalFotos;
+        renderFicha();
+      }
+    } else if(modo === 'fechar'){
+      const deveFechar = dy > 130 || (rapido && dy > 60);
+      if(deveFechar){
+        folha.style.transform = 'translateY(100%)';
+        fichaFundo.style.opacity = '';
+        setTimeout(()=>{
+          folha.style.transform = '';
+          fecharFicha();
+        }, 240);
+      } else {
+        folha.style.transform = '';
+        fichaFundo.style.opacity = '';
+      }
+    }
+    modo = null;
+  }, {passive:true});
+
+  folha.addEventListener('touchcancel', ()=>{
+    const palco = folha.querySelector('.ficha-palco');
+    folha.classList.remove('arrastando');
+    if(palco) palco.classList.remove('arrastando');
+    if(quadro) quadro.style.transform = '';
+    folha.style.transform = '';
+    fichaFundo.style.opacity = '';
+    modo = null;
+  }, {passive:true});
+})();
 window.addEventListener('popstate', ()=>{
   if(ficha.classList.contains('aberta')) fecharFicha(false);
 });
