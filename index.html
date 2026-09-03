@@ -395,8 +395,9 @@
   .admin-login-note{font-size:.74rem;color:var(--muted);line-height:1.5;margin-bottom:18px;}
   .admin-login-box input{
     width:100%;padding:12px 14px;border:1px solid var(--line);background:#fff;
-    font-size:.9rem;font-family:inherit;color:var(--ink);
+    font-size:.9rem;font-family:inherit;color:var(--ink);margin-bottom:10px;
   }
+  .admin-login-box input:last-of-type{margin-bottom:0;}
   .admin-login-error{color:#a5555f;font-size:.76rem;min-height:18px;margin-top:8px;}
   .admin-back-link{display:block;margin-top:16px;font-size:.76rem;color:var(--wine);text-decoration:underline;}
 
@@ -421,6 +422,16 @@
 
   .admin-main{flex:1;padding:32px 36px;overflow-x:hidden;}
   .admin-panel h2{font-size:1.5rem;color:var(--wine-deep);font-family:'Fraunces',serif;font-weight:500;margin-bottom:22px;}
+
+  .admin-conexao{
+    padding:14px 16px;margin-bottom:22px;font-size:.82rem;line-height:1.55;
+    border-left:3px solid var(--wine);background:#fff;color:var(--muted);
+  }
+  .admin-conexao strong{display:block;color:var(--wine-deep);margin-bottom:3px;font-weight:600;}
+  .admin-conexao.ok{border-left-color:#3d6b34;}
+  .admin-conexao.ok strong{color:#3d6b34;}
+  .admin-conexao.local{border-left-color:#a5555f;background:#fdf4f4;}
+  .admin-conexao.local strong{color:#a5555f;}
 
   .admin-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:30px;}
   .admin-stat{background:#fff;border:1px solid var(--line);padding:20px;}
@@ -820,7 +831,8 @@
       <div class="kicker">Amora Store</div>
       <h3 class="serif">Painel administrativo</h3>
       <p class="admin-login-note">Esse acesso é só uma trava simples pra evitar entrada por acidente — não é uma segurança forte. Não reutilize uma senha importante aqui.</p>
-      <input type="password" id="adminPwInput" placeholder="Senha" autocomplete="off">
+      <input type="email" id="adminEmailInput" placeholder="E-mail" autocomplete="username" style="display:none;">
+      <input type="password" id="adminPwInput" placeholder="Senha" autocomplete="current-password">
       <div class="admin-login-error" id="adminLoginError"></div>
       <button class="btn btn-solid" id="adminLoginBtn" style="width:100%;margin-top:10px;">Entrar</button>
       <a href="#" class="admin-back-link">← Voltar pra loja</a>
@@ -867,8 +879,43 @@
 
 </div><!-- /adminApp -->
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const WHATSAPP = "5569992028738";
+
+/* ============================================================
+   BANCO DE DADOS — PREENCHA AS DUAS LINHAS ABAIXO
+
+   Sem essas duas chaves o site funciona em MODO LOCAL: tudo que
+   você cadastrar fica salvo só no seu navegador e as clientes não
+   enxergam. Preenchendo, o catálogo passa a vir do banco e aparece
+   igual pra todo mundo, em qualquer aparelho.
+
+   Onde achar (leva 5 minutos):
+   supabase.com -> seu projeto -> botao "Connect" (no topo da tela)
+     Project URL       -> cole em SUPABASE_URL
+     Publishable key   -> cole em SUPABASE_KEY
+
+   A chave aparece como "Publishable key" (sb_publishable_...) nos
+   projetos novos, ou como "anon public" nos antigos. Serve qualquer
+   uma das duas.
+
+   Pode colar sem medo: essa chave e feita pra ficar visivel no site.
+   Quem protege o cadastro e o login do painel + as regras de acesso
+   do banco (o arquivo supabase-setup.sql cria elas). A chave que
+   NUNCA pode entrar aqui e a "secret" / "service_role".
+   ============================================================ */
+const SUPABASE_URL = "https://lajmrfnjucxqrpunfnai.supabase.co";
+const SUPABASE_KEY = "sb_publishable_kj_yJR7Xa7L8kMnq7FCNCQ_qnB0FCQ8";
+
+const db = (SUPABASE_URL && SUPABASE_KEY && window.supabase)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+const MODO_LOCAL = !db;
+const BIBLIOTECA_FALHOU = !!(SUPABASE_URL && SUPABASE_KEY && !window.supabase);
+if(BIBLIOTECA_FALHOU){
+  console.error('As chaves do banco estão preenchidas, mas a biblioteca do Supabase não carregou. A loja caiu no modo local.');
+}
 
 /* ============================================================
    COMO TROCAR PELAS FOTOS REAIS:
@@ -950,9 +997,22 @@ const DEFAULT_PRODUCTS = [
 ];
 
 const STORAGE_KEYS = { products:'amora_products', theme:'amora_theme', pw:'amora_admin_pw' };
+
+/* Alguns navegadores (aba anônima, cookies bloqueados) proíbem o
+   armazenamento local e disparam erro só de tentar ler. Estas funções
+   engolem esse erro pra nunca travar a loja nem o painel. */
+function lerArmazenado(area, chave){
+  try{ return window[area].getItem(chave); }catch(e){ return null; }
+}
+function gravarArmazenado(area, chave, valor){
+  try{ window[area].setItem(chave, valor); return true; }catch(e){ return false; }
+}
+function apagarArmazenado(area, chave){
+  try{ window[area].removeItem(chave); }catch(e){}
+}
 const DEFAULT_THEME = { primary:'#7A2A42', secondary:'#4E1728', bg:'#FBF0E1', text:'#2E1119', button:'#7A2A42', price:'#2E1119', accent:'#7A2A42' };
 
-function loadProducts(){
+function loadProductsLocal(){
   try{
     const raw = localStorage.getItem(STORAGE_KEYS.products);
     if(raw) return JSON.parse(raw);
@@ -968,14 +1028,16 @@ function saveProducts(){
   }
 }
 
-function loadTheme(){
+function loadThemeLocal(){
   try{
     const raw = localStorage.getItem(STORAGE_KEYS.theme);
     if(raw) return Object.assign({}, DEFAULT_THEME, JSON.parse(raw));
   }catch(e){}
   return Object.assign({}, DEFAULT_THEME);
 }
-function saveThemeToStorage(t){ localStorage.setItem(STORAGE_KEYS.theme, JSON.stringify(t)); }
+function saveThemeToStorage(t){
+  try{ localStorage.setItem(STORAGE_KEYS.theme, JSON.stringify(t)); }catch(e){}
+}
 function applyTheme(t){
   const s = document.documentElement.style;
   s.setProperty('--color-primary', t.primary);
@@ -987,8 +1049,98 @@ function applyTheme(t){
   s.setProperty('--color-accent', t.accent);
 }
 
-let products = loadProducts();
-let theme = loadTheme();
+/* ============================================================
+   CAMADA DE DADOS
+   No banco as colunas usam nomes com underline (old_price) e aqui
+   no site usamos camelCase (oldPrice) — estas duas funções fazem
+   a tradução de um lado pro outro.
+   ============================================================ */
+function linhaParaProduto(row){
+  return {
+    id: row.id,
+    name: row.name,
+    cat: row.cat,
+    price: Number(row.price),
+    oldPrice: row.old_price != null ? Number(row.old_price) : undefined,
+    off: row.desconto || undefined,
+    fabric: row.fabric || undefined,
+    description: row.description || undefined,
+    sizes: (row.sizes && row.sizes.length) ? row.sizes : undefined,
+    colors: (row.colors && row.colors.length) ? row.colors : undefined,
+    images: (row.images && row.images.length) ? row.images : undefined,
+    stock: row.stock == null ? 0 : Number(row.stock),
+    available: row.available !== false
+  };
+}
+function produtoParaLinha(p){
+  const fotos = productImages(p);
+  return {
+    name: p.name,
+    cat: p.cat,
+    price: p.price,
+    old_price: p.oldPrice == null ? null : p.oldPrice,
+    desconto: p.off || null,
+    fabric: p.fabric || null,
+    description: p.description || null,
+    sizes: (p.sizes && p.sizes.length) ? p.sizes : null,
+    colors: (p.colors && p.colors.length) ? p.colors : null,
+    images: fotos.length ? fotos : null,
+    stock: p.stock == null ? 0 : p.stock,
+    available: p.available !== false
+  };
+}
+
+async function buscarProdutos(){
+  const { data, error } = await db.from('produtos').select('*').order('id', {ascending:true});
+  if(error) throw error;
+  return (data || []).map(linhaParaProduto);
+}
+async function buscarTema(){
+  const { data, error } = await db.from('config').select('valor').eq('chave','tema').maybeSingle();
+  if(error) throw error;
+  return Object.assign({}, DEFAULT_THEME, (data && data.valor) || {});
+}
+async function inserirProduto(p){
+  const { data, error } = await db.from('produtos').insert(produtoParaLinha(p)).select().single();
+  if(error) throw error;
+  return linhaParaProduto(data);
+}
+async function atualizarProduto(id, p){
+  const { data, error } = await db.from('produtos').update(produtoParaLinha(p)).eq('id', id).select().single();
+  if(error) throw error;
+  return linhaParaProduto(data);
+}
+async function excluirProduto(id){
+  const { error } = await db.from('produtos').delete().eq('id', id);
+  if(error) throw error;
+}
+async function salvarTema(t){
+  const { error } = await db.from('config').upsert({ chave:'tema', valor:t }, { onConflict:'chave' });
+  if(error) throw error;
+}
+
+/* sobe uma foto pro armazenamento do Supabase e devolve o link público */
+async function enviarFoto(dataUrl){
+  const blob = dataUrlParaBlob(dataUrl);
+  const nome = `produtos/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
+  const { error } = await db.storage.from('fotos').upload(nome, blob, {
+    contentType: blob.type || 'image/jpeg',
+    cacheControl: '31536000'
+  });
+  if(error) throw error;
+  return db.storage.from('fotos').getPublicUrl(nome).data.publicUrl;
+}
+function dataUrlParaBlob(dataUrl){
+  const partes = dataUrl.split(',');
+  const tipo = (partes[0].match(/:(.*?);/) || [null,'image/jpeg'])[1];
+  const bin = atob(partes[1]);
+  const buf = new Uint8Array(bin.length);
+  for(let i=0; i<bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return new Blob([buf], { type: tipo });
+}
+
+let products = [];
+let theme = Object.assign({}, DEFAULT_THEME);
 applyTheme(theme);
 
 const categories = ["Todos", "Conjuntos", "Sutiãs", "Calcinhas", "Acessórios"];
@@ -1343,10 +1495,61 @@ envioOverlay.addEventListener('click', (e)=>{ if(e.target===envioOverlay) envioO
 document.getElementById('deliveryWa').href =
   `https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Olá! Quero saber o valor e prazo de entrega pro meu endereço.")}`;
 
-renderCatBar();
-renderGrid();
-renderCart();
-renderMarquee();
+/* ---------- carrega os dados e monta a loja ---------- */
+
+/* desiste depois de um tempo, pra cliente nunca ficar
+   olhando pra um "carregando" que não termina nunca */
+function comLimiteDeTempo(promessa, ms){
+  let id;
+  const relogio = new Promise((_, rejeitar)=>{
+    id = setTimeout(()=>rejeitar(new Error('O banco demorou demais para responder.')), ms);
+  });
+  return Promise.race([promessa, relogio]).finally(()=>clearTimeout(id));
+}
+
+async function bootLoja(){
+  renderCatBar();
+  renderCart();
+
+  if(MODO_LOCAL){
+    products = loadProductsLocal();
+    theme = loadThemeLocal();
+    applyTheme(theme);
+    renderGrid();
+    renderMarquee();
+    return;
+  }
+
+  const grid = document.getElementById('productGrid');
+  if(grid) grid.innerHTML = '<div class="empty-cat">Carregando o catálogo…</div>';
+  try{
+    const [listaProdutos, temaSalvo] = await comLimiteDeTempo(
+      Promise.all([buscarProdutos(), buscarTema()]), 12000
+    );
+    products = listaProdutos;
+    theme = temaSalvo;
+    applyTheme(theme);
+    renderGrid();
+    renderMarquee();
+  }catch(e){
+    console.error('Falha ao carregar do banco:', e);
+    if(grid){
+      grid.innerHTML = `
+        <div class="empty-cat">
+          Não consegui carregar o catálogo agora.<br>
+          Verifique sua conexão e tente de novo.
+          <div style="margin-top:16px;">
+            <button class="btn btn-solid" id="tentarDeNovoBtn">Tentar de novo</button>
+          </div>
+        </div>`;
+      const botao = document.getElementById('tentarDeNovoBtn');
+      if(botao) botao.addEventListener('click', ()=>bootLoja());
+    }
+    throw e;
+  }
+}
+const carregamentoInicial = bootLoja();
+carregamentoInicial.catch(()=>{}); // o erro já é tratado dentro de bootLoja
 
 /* ================= ADMIN ================= */
 
@@ -1358,7 +1561,7 @@ const ALL_CATEGORIES = ["Conjuntos","Sutiãs","Calcinhas","Acessórios"];
 const COMMON_SIZES = ["P","M","G","GG","Único"];
 
 function refreshStorefront(){
-  const saved = saveProducts();
+  const saved = MODO_LOCAL ? saveProducts() : true;
   renderCatBar();
   renderGrid();
   renderCart();
@@ -1394,42 +1597,91 @@ function checkRoute(){
   const isAdmin = location.hash.indexOf('admin') === 1;
   document.getElementById('storeApp').style.display = isAdmin ? 'none' : '';
   document.getElementById('adminApp').style.display = isAdmin ? 'block' : 'none';
-  if(isAdmin){
-    if(sessionStorage.getItem('amora_admin_session') === '1'){
-      showAdminDashboard();
-    } else {
-      document.getElementById('adminLogin').style.display = 'flex';
-      document.getElementById('adminDashboard').style.display = 'none';
-    }
+  if(isAdmin) verificarSessaoAdmin();
+}
+async function verificarSessaoAdmin(){
+  let logado = false;
+  if(MODO_LOCAL){
+    logado = lerArmazenado('sessionStorage', 'amora_admin_session') === '1';
+  } else {
+    try{
+      const { data } = await db.auth.getSession();
+      logado = !!(data && data.session);
+    }catch(e){ logado = false; }
   }
+  if(logado){
+    showAdminDashboard();
+  } else {
+    document.getElementById('adminLogin').style.display = 'flex';
+    document.getElementById('adminDashboard').style.display = 'none';
+  }
+}
+
+/* com banco, o login é uma conta de verdade (Supabase Auth) */
+if(!MODO_LOCAL){
+  document.getElementById('adminEmailInput').style.display = 'block';
+  document.querySelector('.admin-login-note').textContent =
+    'Entre com o e-mail e a senha da conta de administradora que você criou no Supabase.';
 }
 window.addEventListener('hashchange', checkRoute);
 checkRoute();
 
-document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
-  const val = document.getElementById('adminPwInput').value;
-  const stored = localStorage.getItem(STORAGE_KEYS.pw) || 'amora2026';
-  if(val === stored){
-    sessionStorage.setItem('amora_admin_session', '1');
+document.getElementById('adminLoginBtn').addEventListener('click', async ()=>{
+  const erro = document.getElementById('adminLoginError');
+  const btn = document.getElementById('adminLoginBtn');
+  const senha = document.getElementById('adminPwInput').value;
+  erro.textContent = '';
+
+  if(MODO_LOCAL){
+    const stored = lerArmazenado('localStorage', STORAGE_KEYS.pw) || 'amora2026';
+    if(senha === stored){
+      gravarArmazenado('sessionStorage', 'amora_admin_session', '1');
+      showAdminDashboard();
+    } else {
+      erro.textContent = 'Senha incorreta.';
+    }
+    return;
+  }
+
+  const email = document.getElementById('adminEmailInput').value.trim();
+  if(!email || !senha){ erro.textContent = 'Preencha o e-mail e a senha.'; return; }
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  try{
+    const { error } = await db.auth.signInWithPassword({ email, password: senha });
+    if(error){ erro.textContent = 'E-mail ou senha incorretos.'; return; }
     showAdminDashboard();
-  } else {
-    document.getElementById('adminLoginError').textContent = 'Senha incorreta.';
+  }catch(e){
+    erro.textContent = 'Não consegui conectar. Verifique sua internet.';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Entrar';
   }
 });
 document.getElementById('adminPwInput').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') document.getElementById('adminLoginBtn').click();
 });
-document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
-  sessionStorage.removeItem('amora_admin_session');
+document.getElementById('adminEmailInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') document.getElementById('adminPwInput').focus();
+});
+document.getElementById('adminLogoutBtn').addEventListener('click', async ()=>{
+  if(!MODO_LOCAL){ try{ await db.auth.signOut(); }catch(e){} }
+  apagarArmazenado('sessionStorage', 'amora_admin_session');
   location.hash = '';
 });
 document.querySelectorAll('.admin-back-link').forEach(a=>{
   a.addEventListener('click', (e)=>{ e.preventDefault(); location.hash=''; });
 });
 
-function showAdminDashboard(){
+async function showAdminDashboard(){
   document.getElementById('adminLogin').style.display = 'none';
   document.getElementById('adminDashboard').style.display = 'block';
+  try{ await carregamentoInicial; }catch(e){}
+  // busca de novo pra pegar o que foi alterado em outro aparelho
+  if(!MODO_LOCAL){
+    try{
+      products = await buscarProdutos();
+      refreshStorefront();
+    }catch(e){ console.error('Não consegui atualizar a lista de produtos:', e); }
+  }
   switchAdminPanel('overview');
 }
 
@@ -1455,8 +1707,25 @@ function renderOverviewPanel(){
   const available = products.filter(p=>p.available!==false).length;
   const soldOut = products.filter(p=>p.stock!==undefined && p.stock<=0).length;
   const totalStock = products.reduce((s,p)=>s+(p.stock||0),0);
+  const statusConexao = MODO_LOCAL
+    ? (BIBLIOTECA_FALHOU
+      ? `<div class="admin-conexao local">
+           <strong>Modo local — a biblioteca do banco não carregou.</strong>
+           As chaves estão preenchidas, mas o navegador não conseguiu baixar o Supabase.
+           Verifique a conexão e recarregue a página.
+         </div>`
+      : `<div class="admin-conexao local">
+           <strong>Modo local — as clientes não veem o que você cadastra.</strong>
+           Os produtos estão salvos só neste navegador. Preencha SUPABASE_URL e
+           SUPABASE_KEY no arquivo index.html pra ligar o banco.
+         </div>`)
+    : `<div class="admin-conexao ok">
+         <strong>Conectado ao banco.</strong>
+         Tudo que você salvar aqui aparece na hora pra qualquer pessoa que abrir a loja.
+       </div>`;
   document.getElementById('panel-overview').innerHTML = `
     <h2>Visão geral</h2>
+    ${statusConexao}
     <div class="admin-stat-grid">
       <div class="admin-stat"><span class="n">${total}</span><span class="l">produtos cadastrados</span></div>
       <div class="admin-stat"><span class="n">${available}</span><span class="l">disponíveis</span></div>
@@ -1522,12 +1791,22 @@ document.getElementById('confirmDeleteCancel').addEventListener('click', ()=>{
   pendingDeleteId = null;
   document.getElementById('confirmDeleteOverlay').classList.remove('open');
 });
-document.getElementById('confirmDeleteYes').addEventListener('click', ()=>{
+document.getElementById('confirmDeleteYes').addEventListener('click', async ()=>{
+  const btn = document.getElementById('confirmDeleteYes');
   if(pendingDeleteId !== null){
-    products = products.filter(p=>p.id !== pendingDeleteId);
-    refreshStorefront();
-    renderProductsPanel();
-    renderOverviewPanel();
+    btn.disabled = true;
+    try{
+      if(!MODO_LOCAL) await excluirProduto(pendingDeleteId);
+      products = products.filter(p=>p.id !== pendingDeleteId);
+      refreshStorefront();
+      renderProductsPanel();
+      renderOverviewPanel();
+    }catch(e){
+      console.error(e);
+      alert('Não consegui excluir: ' + (e.message || 'erro de conexão'));
+    }finally{
+      btn.disabled = false;
+    }
   }
   pendingDeleteId = null;
   document.getElementById('confirmDeleteOverlay').classList.remove('open');
@@ -1627,14 +1906,29 @@ function renderProductForm(p){
     if(!files.length) return;
     dropText.textContent = 'Preparando as fotos...';
     Promise.all(files.map(f=>compressImage(f).catch(()=>null)))
-      .then(list=>{
-        list.filter(Boolean).forEach(dataUrl=>formImages.push(dataUrl));
+      .then(async list=>{
+        const validas = list.filter(Boolean);
+        let falhas = 0;
+        if(MODO_LOCAL){
+          validas.forEach(dataUrl=>formImages.push(dataUrl));
+        } else {
+          for(let i=0; i<validas.length; i++){
+            dropText.textContent = `Enviando foto ${i+1} de ${validas.length}...`;
+            try{
+              formImages.push(await enviarFoto(validas[i]));
+            }catch(err){
+              console.error('Falha ao enviar foto:', err);
+              falhas++;
+            }
+          }
+        }
         dropText.innerHTML = dropTextHTML;
         renderImageGrid();
+        if(falhas) alert(falhas + ' foto(s) não foram enviadas. Verifique a conexão e tente de novo.');
       });
   });
 
-  document.getElementById('saveProductBtn').addEventListener('click', ()=>{
+  document.getElementById('saveProductBtn').addEventListener('click', async ()=>{
     const name = document.getElementById('f-name').value.trim();
     const cat = document.getElementById('f-cat').value;
     const price = parseFloat(document.getElementById('f-price').value);
@@ -1662,28 +1956,61 @@ function renderProductForm(p){
       off = `−${pct}%`;
     }
 
-    if(editingProductId !== null){
-      const existing = products.find(pr=>pr.id === editingProductId);
-      Object.assign(existing, { name, cat, price, oldPrice, off, sizes: formSizes.length?formSizes:undefined, stock, description, available });
-      delete existing.image;
-      if(formImages.length) existing.images = formImages.slice(); else delete existing.images;
-    } else {
-      const nextId = products.length ? Math.max(...products.map(p=>p.id)) + 1 : 1;
-      const newProduct = { id: nextId, name, cat, price, oldPrice, off, sizes: formSizes.length?formSizes:undefined, stock, description, available };
-      if(formImages.length) newProduct.images = formImages.slice();
-      products.push(newProduct);
-      editingProductId = nextId;
-    }
+    const dados = {
+      name, cat, price, oldPrice, off,
+      sizes: formSizes.length ? formSizes : undefined,
+      images: formImages.length ? formImages.slice() : undefined,
+      stock, description, available
+    };
 
-    const saved = refreshStorefront();
-    if(saved){
-      msg.style.color = '#3d6b34';
-      msg.textContent = 'Salvo! Já está valendo na loja.';
-    } else {
+    const btn = document.getElementById('saveProductBtn');
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try{
+      if(MODO_LOCAL){
+        if(editingProductId !== null){
+          const existing = products.find(pr=>pr.id === editingProductId);
+          Object.assign(existing, dados);
+          delete existing.image;
+          if(!dados.images) delete existing.images;
+        } else {
+          const nextId = products.length ? Math.max(...products.map(p=>p.id)) + 1 : 1;
+          products.push(Object.assign({ id: nextId }, dados));
+          editingProductId = nextId;
+        }
+        const saved = refreshStorefront();
+        if(saved){
+          msg.style.color = '#3d6b34';
+          msg.textContent = 'Salvo neste navegador. Atenção: as clientes ainda não veem — falta ligar o banco.';
+        } else {
+          msg.style.color = '#a5555f';
+          msg.textContent = 'Não consegui guardar no navegador. Já está valendo nesta tela, mas pode se perder ao recarregar — normalmente é excesso de fotos guardadas.';
+        }
+      } else {
+        if(editingProductId !== null){
+          const atualizado = await atualizarProduto(editingProductId, dados);
+          const i = products.findIndex(pr=>pr.id === editingProductId);
+          if(i >= 0) products[i] = atualizado; else products.push(atualizado);
+        } else {
+          const novo = await inserirProduto(dados);
+          products.push(novo);
+          editingProductId = novo.id;
+        }
+        refreshStorefront();
+        msg.style.color = '#3d6b34';
+        msg.textContent = 'Salvo no banco! Já está valendo pra todo mundo.';
+      }
+      renderOverviewPanel();
+    }catch(e){
+      console.error(e);
       msg.style.color = '#a5555f';
-      msg.textContent = 'Não consegui guardar no navegador. Já está valendo nesta tela, mas pode se perder ao recarregar — normalmente é excesso de fotos guardadas. Tente usar menos fotos (ou fotos menores) por produto.';
+      msg.textContent = 'Não consegui salvar: ' + (e.message || 'erro de conexão') + '.';
+    }finally{
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
     }
-    renderOverviewPanel();
   });
 }
 
@@ -1741,14 +2068,25 @@ function renderStockPanel(){
     </tr>
   `).join('');
   rows.querySelectorAll('[data-stock-id]').forEach(input=>{
-    input.addEventListener('change', ()=>{
+    input.addEventListener('change', async ()=>{
       const id = Number(input.dataset.stockId);
       const p = products.find(pr=>pr.id===id);
+      const anterior = p.stock;
       p.stock = parseInt(input.value,10) || 0;
       document.getElementById('stock-status-'+id).innerHTML = p.stock<=0
         ? '<span class="admin-badge out">Esgotado</span>' : '<span class="admin-badge ok">Disponível</span>';
-      refreshStorefront();
-      renderOverviewPanel();
+      try{
+        if(!MODO_LOCAL) await atualizarProduto(id, p);
+        refreshStorefront();
+        renderOverviewPanel();
+      }catch(e){
+        console.error(e);
+        p.stock = anterior;
+        input.value = anterior;
+        document.getElementById('stock-status-'+id).innerHTML = (anterior||0)<=0
+          ? '<span class="admin-badge out">Esgotado</span>' : '<span class="admin-badge ok">Disponível</span>';
+        alert('Não consegui salvar o estoque: ' + (e.message || 'erro de conexão'));
+      }
     });
   });
 }
@@ -1783,12 +2121,19 @@ function renderAppearancePanel(){
       de destaque ainda não têm campo próprio aqui — é a próxima etapa quando você quiser.
     </p>
   `;
+  let temporizadorTema;
   THEME_FIELDS.forEach(f=>{
     document.getElementById('theme-'+f.key).addEventListener('input', (e)=>{
       theme[f.key] = e.target.value;
       document.getElementById('theme-'+f.key+'-hex').textContent = e.target.value;
       applyTheme(theme);
       saveThemeToStorage(theme);
+      if(MODO_LOCAL) return;
+      // espera parar de mexer no seletor antes de gravar no banco
+      clearTimeout(temporizadorTema);
+      temporizadorTema = setTimeout(()=>{
+        salvarTema(theme).catch(err=>console.error('Falha ao salvar as cores:', err));
+      }, 700);
     });
   });
   document.getElementById('resetThemeBtn').addEventListener('click', ()=>{
@@ -1796,19 +2141,47 @@ function renderAppearancePanel(){
     theme = Object.assign({}, DEFAULT_THEME);
     applyTheme(theme);
     saveThemeToStorage(theme);
+    if(!MODO_LOCAL) salvarTema(theme).catch(err=>console.error(err));
     renderAppearancePanel();
   });
 }
 
 /* ---------- configurações ---------- */
 function renderSettingsPanel(){
-  document.getElementById('panel-settings').innerHTML = `
-    <h2>Configurações</h2>
+  const blocoMigracao = MODO_LOCAL ? '' : `
     <div class="admin-form" style="margin-bottom:26px;">
+      <div class="admin-field" style="margin-bottom:10px;">
+        <label>Enviar o catálogo deste navegador pro banco</label>
+        <p style="font-size:.8rem;color:var(--muted);line-height:1.6;">
+          Use uma vez só, se você já tinha produtos cadastrados aqui antes do banco existir.
+          Cada produto é copiado pro banco (as fotos também) e passa a aparecer pra todo mundo.
+          Se você clicar duas vezes, os produtos vão ficar duplicados.
+        </p>
+      </div>
+      <button class="admin-save-btn" id="migrarBtn">Enviar produtos pro banco</button>
+      <div class="admin-msg" id="migrarMsg"></div>
+    </div>`;
+
+  const campoSenhaAtual = MODO_LOCAL ? `
       <div class="admin-field">
         <label>Senha atual</label>
         <input type="password" id="pw-current">
-      </div>
+      </div>` : '';
+
+  const avisoSenha = MODO_LOCAL ? '' : `
+      <div class="admin-field" style="margin-bottom:10px;">
+        <p style="font-size:.8rem;color:var(--muted);line-height:1.6;">
+          Isso altera a senha da sua conta de administradora no banco — a mesma que você
+          usa pra entrar neste painel.
+        </p>
+      </div>`;
+
+  document.getElementById('panel-settings').innerHTML = `
+    <h2>Configurações</h2>
+    ${blocoMigracao}
+    <div class="admin-form" style="margin-bottom:26px;">
+      ${avisoSenha}
+      ${campoSenhaAtual}
       <div class="admin-field">
         <label>Nova senha</label>
         <input type="password" id="pw-new">
@@ -1822,30 +2195,132 @@ function renderSettingsPanel(){
     </div>
     <button class="admin-reset-btn" id="resetAllBtn">Restaurar produtos e cores originais</button>
   `;
-  document.getElementById('changePwBtn').addEventListener('click', ()=>{
-    const current = document.getElementById('pw-current').value;
-    const stored = localStorage.getItem(STORAGE_KEYS.pw) || 'amora2026';
+
+  if(!MODO_LOCAL){
+    document.getElementById('migrarBtn').addEventListener('click', ()=>{
+      const botao = document.getElementById('migrarBtn');
+      const saida = document.getElementById('migrarMsg');
+      if(!confirm('Copiar os produtos deste navegador pro banco? Se você já fez isso antes, eles vão duplicar.')) return;
+      migrarParaOBanco(botao, saida);
+    });
+  }
+
+  document.getElementById('changePwBtn').addEventListener('click', async ()=>{
     const next = document.getElementById('pw-new').value;
     const confirm2 = document.getElementById('pw-confirm').value;
     const msg = document.getElementById('pwMsg');
-    if(current !== stored){ msg.style.color='#a5555f'; msg.textContent='Senha atual incorreta.'; return; }
-    if(!next || next !== confirm2){ msg.style.color='#a5555f'; msg.textContent='A nova senha e a confirmação precisam ser iguais.'; return; }
-    localStorage.setItem(STORAGE_KEYS.pw, next);
-    msg.style.color='#3d6b34';
-    msg.textContent='Senha alterada.';
-    document.getElementById('pw-current').value='';
+
+    if(!next || next !== confirm2){
+      msg.style.color='#a5555f';
+      msg.textContent='A nova senha e a confirmação precisam ser iguais.';
+      return;
+    }
+
+    if(MODO_LOCAL){
+      const current = document.getElementById('pw-current').value;
+      const stored = lerArmazenado('localStorage', STORAGE_KEYS.pw) || 'amora2026';
+      if(current !== stored){ msg.style.color='#a5555f'; msg.textContent='Senha atual incorreta.'; return; }
+      if(gravarArmazenado('localStorage', STORAGE_KEYS.pw, next)){
+        msg.style.color='#3d6b34';
+        msg.textContent='Senha alterada.';
+      } else {
+        msg.style.color='#a5555f';
+        msg.textContent='Não consegui guardar a nova senha neste navegador.';
+      }
+    } else {
+      if(next.length < 6){
+        msg.style.color='#a5555f';
+        msg.textContent='A senha precisa ter pelo menos 6 caracteres.';
+        return;
+      }
+      const btn = document.getElementById('changePwBtn');
+      btn.disabled = true; btn.textContent = 'Alterando...';
+      try{
+        const { error } = await db.auth.updateUser({ password: next });
+        if(error) throw error;
+        msg.style.color='#3d6b34';
+        msg.textContent='Senha da sua conta alterada.';
+      }catch(e){
+        msg.style.color='#a5555f';
+        msg.textContent='Não consegui alterar: ' + (e.message || 'erro de conexão');
+      }finally{
+        btn.disabled = false; btn.textContent = 'Alterar senha';
+      }
+    }
+
+    const campoAtual = document.getElementById('pw-current');
+    if(campoAtual) campoAtual.value='';
     document.getElementById('pw-new').value='';
     document.getElementById('pw-confirm').value='';
   });
-  document.getElementById('resetAllBtn').addEventListener('click', ()=>{
-    if(!confirm('Isso vai apagar os produtos e cores que você personalizou, voltando ao catálogo original. Continuar?')) return;
-    products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
-    theme = Object.assign({}, DEFAULT_THEME);
-    applyTheme(theme);
-    saveThemeToStorage(theme);
+
+  document.getElementById('resetAllBtn').addEventListener('click', async ()=>{
+    const aviso = MODO_LOCAL
+      ? 'Isso vai apagar os produtos e cores que você personalizou, voltando ao catálogo original. Continuar?'
+      : 'ATENÇÃO: isso apaga TODOS os produtos do banco (inclusive pras clientes) e recoloca o catálogo de exemplo. Continuar?';
+    if(!confirm(aviso)) return;
+
+    const btn = document.getElementById('resetAllBtn');
+    btn.disabled = true;
+    try{
+      if(MODO_LOCAL){
+        products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+      } else {
+        for(const p of products.slice()) await excluirProduto(p.id);
+        for(const p of DEFAULT_PRODUCTS) await inserirProduto(p);
+        products = await buscarProdutos();
+      }
+      theme = Object.assign({}, DEFAULT_THEME);
+      applyTheme(theme);
+      saveThemeToStorage(theme);
+      if(!MODO_LOCAL) await salvarTema(theme);
+      refreshStorefront();
+      renderOverviewPanel();
+    }catch(e){
+      console.error(e);
+      alert('Não consegui restaurar: ' + (e.message || 'erro de conexão'));
+    }finally{
+      btn.disabled = false;
+    }
+  });
+}
+
+/* copia o catálogo salvo neste navegador pro banco, subindo as fotos */
+async function migrarParaOBanco(botao, saida){
+  const locais = loadProductsLocal();
+  botao.disabled = true;
+  saida.style.color = 'var(--muted)';
+  let enviados = 0, fotosEnviadas = 0;
+  try{
+    for(const p of locais){
+      saida.textContent = `Enviando ${enviados+1} de ${locais.length} — ${p.name}...`;
+      const copia = Object.assign({}, p);
+      delete copia.image;
+      const novasFotos = [];
+      for(const src of productImages(p)){
+        if(src.indexOf('data:') === 0){
+          novasFotos.push(await enviarFoto(src));
+          fotosEnviadas++;
+        } else {
+          novasFotos.push(src);
+        }
+      }
+      copia.images = novasFotos.length ? novasFotos : undefined;
+      await inserirProduto(copia);
+      enviados++;
+    }
+    products = await buscarProdutos();
     refreshStorefront();
     renderOverviewPanel();
-  });
+    saida.style.color = '#3d6b34';
+    saida.textContent = `Pronto! ${enviados} produto(s) e ${fotosEnviadas} foto(s) no banco. Agora as clientes veem.`;
+  }catch(e){
+    console.error(e);
+    saida.style.color = '#a5555f';
+    saida.textContent = `Parou no produto ${enviados+1}: ${e.message || 'erro de conexão'}. Os ${enviados} anteriores já foram enviados.`;
+  }finally{
+    botao.disabled = false;
+  }
 }
 </script>
 
