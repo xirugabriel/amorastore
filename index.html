@@ -419,7 +419,7 @@
   .ficha-fechar:hover{background:var(--wine);color:var(--cream);transform:rotate(90deg);}
   .ficha-corpo{display:grid;grid-template-columns:1fr 1fr;overflow:hidden;flex:1;min-height:0;}
 
-  .ficha-galeria{background:var(--cream-soft);display:flex;flex-direction:column;min-height:0;}
+  .ficha-galeria{background:var(--cream-soft);display:flex;flex-direction:column;min-height:0;width:100%;align-items:stretch;}
   .ficha-palco{
     position:relative;flex:1;overflow:hidden;min-height:0;
     background:var(--cream-soft);
@@ -427,11 +427,12 @@
   }
   .ficha-palco .quadro{
     position:absolute;inset:0;z-index:1;
+    display:flex;align-items:center;justify-content:center;
     transition:transform .3s var(--ease-out);
   }
   .ficha-palco.arrastando .quadro{transition:none;}
   /* contain (e nao cover) pra nunca cortar a peca na ficha */
-  .ficha-palco img{width:100%;height:100%;object-fit:contain;}
+  .ficha-palco img{width:100%;height:100%;object-fit:contain;object-position:center;}
   /* a propria foto, borrada, preenche as faixas que sobram nas laterais */
   .ficha-palco .borrao{
     position:absolute;inset:0;z-index:0;object-fit:cover;
@@ -826,6 +827,7 @@
     /* a moldura assume a proporcao da propria foto (ver --ratio-foto no JS),
        assim a peca encaixa sem faixa sobrando */
     .ficha-palco{
+      width:100%;align-self:stretch;
       aspect-ratio:var(--ratio-foto, 4/5);flex:none;
       max-height:58vh;max-height:58dvh;
     }
@@ -869,191 +871,411 @@
     .drawer-foot{padding:16px 16px calc(20px + env(safe-area-inset-bottom));}
   }
 
-  /* ================= ADMIN ================= */
+  /* ============================================================
+     PAINEL ADMINISTRATIVO
+     ============================================================ */
   .admin-login{
     min-height:100vh;display:flex;align-items:center;justify-content:center;
-    background:var(--wine-deep);padding:24px;
+    background:linear-gradient(160deg, var(--wine-deep), #3a1020);padding:24px;
   }
   .admin-login-box{
-    background:var(--cream);padding:36px 30px;max-width:340px;width:100%;text-align:center;
+    background:var(--cream);padding:38px 32px;max-width:360px;width:100%;
+    text-align:center;border-radius:var(--r-lg);box-shadow:var(--sh-4);
   }
-  .admin-login-box h3{margin-bottom:10px;}
-  .admin-login-note{font-size:.74rem;color:var(--muted);line-height:1.5;margin-bottom:18px;}
+  .admin-login-box h3{
+    font-family:'Fraunces',serif;font-weight:500;font-size:1.25rem;
+    color:var(--wine-deep);margin-bottom:10px;
+  }
+  .admin-login-note{font-size:.76rem;color:var(--muted);line-height:1.6;margin-bottom:20px;}
   .admin-login-box input{
-    width:100%;padding:12px 14px;border:1px solid var(--line);background:#fff;
-    font-size:.9rem;font-family:inherit;color:var(--ink);margin-bottom:10px;
+    width:100%;padding:13px 15px;border:1px solid var(--line);background:var(--surface);
+    border-radius:var(--r-sm);font-size:.92rem;font-family:inherit;color:var(--ink);
+    margin-bottom:10px;transition:border-color .2s, box-shadow .2s;
+  }
+  .admin-login-box input:focus{
+    outline:none;border-color:var(--wine);box-shadow:0 0 0 3px rgba(122,42,66,.1);
   }
   .admin-login-box input:last-of-type{margin-bottom:0;}
-  .admin-login-error{color:#a5555f;font-size:.76rem;min-height:18px;margin-top:8px;}
-  .admin-back-link{display:block;margin-top:16px;font-size:.76rem;color:var(--wine);text-decoration:underline;}
+  .admin-login-error{color:#a5555f;font-size:.78rem;min-height:18px;margin-top:10px;}
+  .admin-back-link{
+    display:block;margin-top:18px;font-size:.78rem;color:var(--wine);
+    text-decoration:underline;text-underline-offset:3px;
+  }
 
   .admin-shell{display:flex;min-height:100vh;background:var(--cream-soft);}
+
+  /* ---------- barra lateral ---------- */
   .admin-sidebar{
-    width:220px;flex-shrink:0;background:var(--wine-deep);color:#E7CBD1;
-    padding:24px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;
+    width:236px;flex-shrink:0;background:var(--wine-deep);color:#E7CBD1;
+    padding:22px 14px;display:flex;flex-direction:column;gap:4px;
+    position:sticky;top:0;height:100vh;
   }
-  .admin-brand{font-size:1.3rem;color:var(--cream);margin-bottom:18px;}
-  .admin-brand .kicker{color:var(--gold-soft,#E4CE8C);margin-top:2px;}
+  .admin-brand{
+    font-family:'Fraunces',serif;font-size:1.3rem;color:var(--cream);
+    margin-bottom:20px;padding:0 8px;line-height:1.1;
+  }
+  .admin-brand .kicker{color:#E4CE8C;margin-top:3px;font-size:.6rem;}
   .admin-nav{display:flex;flex-direction:column;align-items:stretch;gap:2px;flex:1;height:auto;}
   .admin-nav-btn{
-    display:flex;align-items:center;gap:9px;
-    text-align:left;padding:11px 12px;font-size:.84rem;color:#E7CBD1;border-radius:4px;transition:.15s;
+    display:flex;align-items:center;gap:11px;text-align:left;
+    padding:11px 12px;font-size:.85rem;color:#E7CBD1;
+    border-radius:var(--r-sm);transition:background .18s var(--ease), color .18s;
   }
-  .admin-nav-btn .nav-ico{font-size:.95rem;line-height:1;}
+  .admin-nav-btn .nav-ico{
+    display:flex;align-items:center;justify-content:center;
+    width:19px;height:19px;flex:0 0 19px;opacity:.85;
+  }
   .admin-nav-btn .nav-curto{display:none;}
-  .admin-nav-btn:hover{background:rgba(255,255,255,.08);}
-  .admin-nav-btn.active{background:var(--cream);color:var(--wine-deep);font-weight:600;}
+  .admin-nav-btn:hover{background:rgba(255,255,255,.09);color:var(--cream);}
+  .admin-nav-btn.active{
+    background:var(--cream);color:var(--wine-deep);font-weight:600;
+    box-shadow:var(--sh-2);
+  }
+  .admin-nav-btn.active .nav-ico{opacity:1;}
   .admin-logout-btn{
-    margin-top:10px;padding:10px;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;
-    border:1px solid rgba(255,255,255,.3);color:#E7CBD1;
+    margin-top:10px;padding:11px;border-radius:var(--r-sm);
+    font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;
+    border:1px solid rgba(255,255,255,.26);color:#E7CBD1;transition:.2s;
   }
-  .admin-logout-btn:hover{background:rgba(255,255,255,.08);}
+  .admin-logout-btn:hover{background:rgba(255,255,255,.1);color:var(--cream);}
 
-  .admin-main{flex:1;padding:32px 36px;overflow-x:hidden;}
-  .admin-panel h2{font-size:1.5rem;color:var(--wine-deep);font-family:'Fraunces',serif;font-weight:500;margin-bottom:22px;}
+  /* ---------- área principal ---------- */
+  .admin-main{flex:1;padding:30px 34px 60px;overflow-x:hidden;min-width:0;}
+  /* os paineis sao <section>: zera o padding que a regra generica da loja aplica */
+  .admin-panel{padding:0;scroll-margin-top:0;}
+  .admin-cabeca{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;margin-bottom:22px;
+  }
+  .admin-panel h2{
+    font-family:'Fraunces',serif;font-weight:500;font-size:1.55rem;
+    color:var(--wine-deep);letter-spacing:-.01em;margin-bottom:4px;
+  }
+  .admin-sub{font-size:.82rem;color:var(--muted);line-height:1.5;}
 
+  .admin-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:11px 18px;border-radius:var(--r-full);
+    font-size:.78rem;letter-spacing:.04em;font-weight:500;
+    background:var(--wine);color:var(--cream);border:1px solid var(--wine);
+    transition:all .24s var(--ease);box-shadow:var(--sh-1);white-space:nowrap;
+  }
+  .admin-btn:hover{background:var(--wine-deep);border-color:var(--wine-deep);transform:translateY(-1px);box-shadow:var(--sh-2);}
+  .admin-btn.vazado{background:transparent;color:var(--wine);box-shadow:none;}
+  .admin-btn.vazado:hover{background:var(--wine);color:var(--cream);}
+  .admin-btn:disabled{opacity:.5;pointer-events:none;}
+
+  /* ---------- aviso de conexão ---------- */
   .admin-conexao{
-    padding:14px 16px;margin-bottom:22px;font-size:.82rem;line-height:1.55;
-    border-left:3px solid var(--wine);background:#fff;color:var(--muted);
+    display:flex;gap:12px;align-items:flex-start;
+    padding:14px 16px;margin-bottom:22px;border-radius:var(--r-md);
+    font-size:.82rem;line-height:1.55;color:var(--muted);
+    background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh-1);
   }
-  .admin-conexao strong{display:block;color:var(--wine-deep);margin-bottom:3px;font-weight:600;}
-  .admin-conexao.ok{border-left-color:#3d6b34;}
+  .admin-conexao .ponto{
+    width:9px;height:9px;border-radius:50%;flex:0 0 9px;margin-top:6px;
+  }
+  .admin-conexao strong{display:block;color:var(--wine-deep);margin-bottom:2px;font-weight:600;}
+  .admin-conexao.ok{border-left:3px solid #3d6b34;}
+  .admin-conexao.ok .ponto{background:#3d6b34;box-shadow:0 0 0 3px rgba(61,107,52,.15);}
   .admin-conexao.ok strong{color:#3d6b34;}
-  .admin-conexao.local{border-left-color:#a5555f;background:#fdf4f4;}
+  .admin-conexao.local{border-left:3px solid #a5555f;background:#fdf5f5;}
+  .admin-conexao.local .ponto{background:#a5555f;box-shadow:0 0 0 3px rgba(165,85,95,.15);}
   .admin-conexao.local strong{color:#a5555f;}
 
-  .admin-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:30px;}
-  .admin-stat{background:#fff;border:1px solid var(--line);padding:20px;}
-  .admin-stat .n{font-family:'Fraunces',serif;font-size:2rem;color:var(--wine-deep);display:block;}
-  .admin-stat .l{font-size:.76rem;color:var(--muted);letter-spacing:.04em;}
+  /* ---------- números ---------- */
+  .admin-stat-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+    gap:14px;margin-bottom:26px;
+  }
+  .admin-stat{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:18px 20px;box-shadow:var(--sh-1);
+    transition:transform .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  .admin-stat:hover{transform:translateY(-2px);box-shadow:var(--sh-2);}
+  .admin-stat .n{
+    font-family:'Fraunces',serif;font-size:1.9rem;color:var(--wine-deep);
+    display:block;line-height:1.1;margin-bottom:4px;
+  }
+  .admin-stat .l{font-size:.74rem;color:var(--muted);letter-spacing:.03em;line-height:1.4;}
 
-  .admin-table{width:100%;border-collapse:collapse;background:#fff;}
-  .admin-table th, .admin-table td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:.86rem;}
-  .admin-table th{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
-  .admin-table img{width:44px;height:56px;object-fit:cover;}
-  .campo-estoque{width:80px;padding:6px 8px;border:1px solid var(--line);font-family:inherit;color:var(--ink);}
-  .admin-row-actions{display:flex;gap:8px;}
+  /* ---------- lista "precisa de atenção" ---------- */
+  .admin-secao-titulo{
+    font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;margin:0 0 12px;
+  }
+  .admin-atencao{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
+    overflow:hidden;box-shadow:var(--sh-1);margin-bottom:26px;
+  }
+  .admin-alerta{
+    display:flex;align-items:center;gap:12px;width:100%;
+    padding:14px 18px;border-bottom:1px solid var(--cream-soft);
+    font-size:.86rem;color:var(--ink);text-align:left;
+    transition:background .18s;
+  }
+  .admin-alerta:last-child{border-bottom:none;}
+  .admin-alerta:hover{background:var(--cream-soft);}
+  .admin-alerta .marca{
+    width:8px;height:8px;border-radius:50%;flex:0 0 8px;
+  }
+  .admin-alerta .marca.grave{background:#a5555f;}
+  .admin-alerta .marca.medio{background:#b8862f;}
+  .admin-alerta .marca.leve{background:#8c8c8c;}
+  .admin-alerta .texto{flex:1;min-width:0;}
+  .admin-alerta .texto b{font-weight:600;color:var(--wine-deep);}
+  .admin-alerta .seta{color:var(--muted);flex:0 0 auto;transition:transform .2s;}
+  .admin-alerta:hover .seta{transform:translateX(3px);color:var(--wine);}
+  .admin-tudo-certo{
+    display:flex;align-items:center;gap:12px;padding:20px 18px;
+    font-size:.86rem;color:#3d6b34;
+  }
+
+  /* ---------- barra de ferramentas ---------- */
+  .admin-ferramentas{
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;
+  }
+  .admin-busca{
+    display:flex;align-items:center;gap:9px;flex:1 1 240px;min-width:0;
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-full);
+    padding:0 16px;height:42px;transition:border-color .2s, box-shadow .2s;
+  }
+  .admin-busca:focus-within{border-color:var(--wine);box-shadow:0 0 0 3px rgba(122,42,66,.09);}
+  .admin-busca svg{color:var(--muted);flex:0 0 auto;}
+  .admin-busca input{
+    flex:1;min-width:0;border:none;outline:none;background:none;
+    font-family:inherit;font-size:.86rem;color:var(--ink);
+  }
+  .admin-filtros{display:flex;gap:6px;flex-wrap:wrap;}
+  .admin-filtro{
+    padding:9px 15px;border-radius:var(--r-full);border:1px solid var(--line);
+    background:var(--surface);font-size:.76rem;color:var(--muted);
+    transition:all .22s var(--ease);white-space:nowrap;
+  }
+  .admin-filtro:hover{border-color:var(--wine);color:var(--wine);}
+  .admin-filtro.on{background:var(--wine);border-color:var(--wine);color:var(--cream);box-shadow:var(--sh-1);}
+  .admin-filtro .qt{opacity:.65;margin-left:3px;}
+
+  /* ---------- tabelas ---------- */
+  .admin-table-wrap{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--r-md);overflow:hidden;box-shadow:var(--sh-1);
+  }
+  .admin-table{width:100%;border-collapse:collapse;background:var(--surface);}
+  .admin-table th, .admin-table td{
+    padding:13px 16px;text-align:left;border-bottom:1px solid var(--cream-soft);font-size:.86rem;
+  }
+  .admin-table tbody tr:last-child td{border-bottom:none;}
+  .admin-table tbody tr{transition:background .16s;}
+  .admin-table tbody tr:hover{background:#fdfaf5;}
+  .admin-table th{
+    font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    font-weight:600;background:var(--cream-soft);border-bottom:1px solid var(--line);
+  }
+  .admin-table img{width:46px;height:58px;object-fit:cover;border-radius:var(--r-sm);}
+  .admin-vazio{
+    text-align:center;padding:50px 20px;color:var(--muted);font-size:.88rem;line-height:1.7;
+  }
+  .admin-vazio strong{display:block;color:var(--wine-deep);font-size:1rem;margin-bottom:5px;}
+
+  .admin-row-actions{display:flex;gap:7px;align-items:center;}
   .admin-mini-btn{
-    padding:6px 12px;font-size:.72rem;border:1px solid var(--wine);color:var(--wine);
+    padding:7px 13px;border-radius:var(--r-full);
+    border:1px solid var(--line);color:var(--wine);
+    font-size:.74rem;transition:all .2s var(--ease);white-space:nowrap;
   }
-  .admin-mini-btn:hover{background:var(--wine);color:var(--cream);}
-  .admin-mini-btn.danger{border-color:#a5555f;color:#a5555f;}
-  .admin-mini-btn.danger:hover{background:#a5555f;color:#fff;}
-  .admin-badge{font-size:.68rem;padding:3px 9px;letter-spacing:.04em;text-transform:uppercase;}
-  .admin-badge.ok{background:#e5efe0;color:#3d6b34;}
-  .admin-badge.out{background:#f3dede;color:#a5555f;}
-  .admin-badge.hidden{background:#eee;color:#888;}
+  .admin-mini-btn:hover{background:var(--wine);color:var(--cream);border-color:var(--wine);}
+  .admin-mini-btn.danger{color:#a5555f;}
+  .admin-mini-btn.danger:hover{background:#a5555f;color:#fff;border-color:#a5555f;}
+  .admin-mini-btn.icone{padding:7px 9px;display:inline-flex;align-items:center;}
 
-  .admin-form{background:#fff;border:1px solid var(--line);padding:26px;max-width:560px;}
-  .admin-field{margin-bottom:18px;}
-  .admin-field label{display:block;font-size:.76rem;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;text-transform:uppercase;}
-  .admin-field input[type=text], .admin-field input[type=number], .admin-field select, .admin-field textarea{
-    width:100%;padding:10px 12px;border:1px solid var(--line);font-family:inherit;font-size:.88rem;color:var(--ink);background:#fff;
+  .admin-badge{
+    display:inline-block;font-size:.66rem;padding:4px 10px;border-radius:var(--r-full);
+    letter-spacing:.05em;text-transform:uppercase;font-weight:600;
   }
-  .admin-field textarea{min-height:80px;resize:vertical;}
-  .admin-checkline{display:flex;align-items:center;gap:8px;}
-  .admin-checkline input{width:auto;}
+  .admin-badge.ok{background:#e8f0e4;color:#3d6b34;}
+  .admin-badge.out{background:#f6e3e3;color:#a5555f;}
+  .admin-badge.baixo{background:#f7eeda;color:#8a6a2f;}
+  .admin-badge.hidden{background:#ececec;color:#7b7b7b;}
+
+  /* ---------- formulário ---------- */
+  .admin-form{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:24px;max-width:660px;box-shadow:var(--sh-1);margin-bottom:16px;
+  }
+  .admin-form-titulo{
+    font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;margin-bottom:16px;
+    padding-bottom:11px;border-bottom:1px solid var(--cream-soft);
+  }
+  .admin-field{margin-bottom:17px;}
+  .admin-field:last-child{margin-bottom:0;}
+  .admin-field label{
+    display:block;font-size:.74rem;letter-spacing:.05em;color:var(--muted);
+    margin-bottom:7px;text-transform:uppercase;font-weight:500;
+  }
+  .admin-field input[type=text], .admin-field input[type=number],
+  .admin-field input[type=password], .admin-field select, .admin-field textarea{
+    width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-sm);
+    font-family:inherit;font-size:.9rem;color:var(--ink);background:var(--surface);
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .admin-field input:focus, .admin-field select:focus, .admin-field textarea:focus{
+    outline:none;border-color:var(--wine);box-shadow:0 0 0 3px rgba(122,42,66,.09);
+  }
+  .admin-field textarea{min-height:84px;resize:vertical;}
+  .admin-dupla{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .admin-checkline{display:flex;align-items:center;gap:9px;}
+  .admin-checkline input{width:auto;accent-color:var(--wine);width:17px;height:17px;}
   .admin-size-options{display:flex;gap:8px;flex-wrap:wrap;}
   .admin-size-chip{
-    padding:7px 14px;border:1px solid var(--line);font-size:.78rem;cursor:pointer;user-select:none;
+    padding:9px 17px;border:1px solid var(--line);border-radius:var(--r-full);
+    font-size:.8rem;cursor:pointer;user-select:none;background:var(--surface);
+    transition:all .2s var(--ease);
   }
+  .admin-size-chip:hover{border-color:var(--wine);}
   .admin-size-chip.on{background:var(--wine);color:var(--cream);border-color:var(--wine);}
-  .admin-image-drop{
-    border:1.5px dashed var(--line);padding:18px;text-align:center;cursor:pointer;position:relative;
+
+  /* barra de salvar fixa no rodapé */
+  .admin-salvar-barra{
+    position:sticky;bottom:0;z-index:20;max-width:660px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:rgba(251,240,225,.94);backdrop-filter:blur(12px);
+    border:1px solid var(--line);border-radius:var(--r-md);
+    padding:13px 16px;box-shadow:var(--sh-3);margin-top:4px;
   }
+  .admin-save-btn{
+    padding:13px 28px;border-radius:var(--r-full);background:var(--wine);color:var(--cream);
+    font-size:.8rem;letter-spacing:.05em;font-weight:500;
+    transition:all .24s var(--ease);box-shadow:var(--sh-1);
+  }
+  .admin-save-btn:hover{background:var(--wine-deep);transform:translateY(-1px);box-shadow:var(--sh-2);}
+  .admin-save-btn:disabled{opacity:.5;pointer-events:none;}
+  .admin-msg{font-size:.8rem;color:#3d6b34;min-height:18px;flex:1;line-height:1.45;}
+
+  /* ---------- fotos ---------- */
+  .admin-image-drop{
+    border:1.5px dashed var(--line);border-radius:var(--r-md);
+    padding:20px;text-align:center;cursor:pointer;position:relative;
+    background:var(--cream-soft);transition:border-color .2s, background .2s;
+  }
+  .admin-image-drop:hover{border-color:var(--wine);background:#fdf6ec;}
   .admin-image-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
   .admin-image-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px;}
-  .admin-image-thumb{position:relative;border:1px solid var(--line);background:#fff;aspect-ratio:3/4;overflow:hidden;}
+  .admin-image-thumb{
+    position:relative;border:1px solid var(--line);border-radius:var(--r-sm);
+    background:var(--surface);aspect-ratio:3/4;overflow:hidden;
+  }
   .admin-image-thumb img{width:100%;height:100%;object-fit:cover;}
   .admin-image-badge{
     position:absolute;top:0;left:0;background:var(--wine);color:var(--cream);
-    font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;
+    font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-bottom-right-radius:var(--r-sm);font-weight:600;
   }
   .admin-image-acts{
     position:absolute;bottom:0;left:0;right:0;display:flex;gap:4px;padding:5px;
-    background:linear-gradient(transparent,rgba(46,17,25,.5));
+    background:linear-gradient(transparent,rgba(46,17,25,.55));
   }
   .admin-image-acts button{
-    flex:1;font-size:.64rem;padding:5px 2px;background:rgba(251,240,225,.94);
-    color:var(--wine-deep);letter-spacing:.04em;
+    flex:1;font-size:.64rem;padding:5px 2px;border-radius:4px;
+    background:rgba(251,240,225,.95);color:var(--wine-deep);letter-spacing:.04em;
+    transition:background .18s;
   }
+  .admin-image-acts button:hover{background:var(--cream);}
   .admin-image-acts button.danger{flex:0 0 28px;color:#a5555f;}
   .admin-image-empty{
-    font-size:.76rem;color:var(--muted);padding:14px;border:1px dashed var(--line);
-    text-align:center;margin-bottom:12px;
+    font-size:.78rem;color:var(--muted);padding:16px;border:1px dashed var(--line);
+    border-radius:var(--r-sm);text-align:center;margin-bottom:12px;
   }
-  .admin-image-hint{font-size:.72rem;color:var(--muted);margin-top:8px;line-height:1.55;}
+  .admin-image-hint{font-size:.74rem;color:var(--muted);margin-top:9px;line-height:1.6;}
 
-  /* ---- cores do produto ---- */
+  /* ---------- cores do produto ---------- */
   .cor-linha{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
   .cor-linha input[type=color]{
-    width:42px;height:42px;flex:0 0 42px;border:1px solid var(--line);padding:0;background:none;cursor:pointer;
+    width:44px;height:44px;flex:0 0 44px;border:1px solid var(--line);
+    border-radius:var(--r-sm);padding:0;background:none;cursor:pointer;
   }
   .cor-linha input[type=text]{
-    flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);
-    font-family:inherit;font-size:.88rem;color:var(--ink);background:#fff;
+    flex:1;min-width:0;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-sm);
+    font-family:inherit;font-size:.9rem;color:var(--ink);background:var(--surface);
   }
   .cor-remover{
-    flex:0 0 38px;height:38px;border:1px solid var(--line);color:#a5555f;
-    display:flex;align-items:center;justify-content:center;font-size:.8rem;
+    flex:0 0 40px;height:40px;border:1px solid var(--line);border-radius:var(--r-sm);
+    color:#a5555f;display:flex;align-items:center;justify-content:center;
+    font-size:.82rem;transition:.2s;
   }
   .cor-remover:hover{background:#a5555f;color:#fff;border-color:#a5555f;}
 
-  /* ---- grade de estoque cor x tamanho ---- */
+  /* ---------- grade de estoque ---------- */
   .grade-linha{
     display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-    padding:12px;border:1px solid var(--line);background:#fff;margin-bottom:8px;
+    padding:13px;border:1px solid var(--line);border-radius:var(--r-sm);
+    background:var(--surface);margin-bottom:8px;
   }
   .grade-cor{
-    display:flex;align-items:center;gap:8px;flex:0 0 130px;
+    display:flex;align-items:center;gap:9px;flex:0 0 140px;
     font-size:.86rem;color:var(--wine-deep);font-weight:500;
   }
   .grade-bolinha{
-    width:16px;height:16px;border-radius:50%;flex:0 0 16px;border:1px solid var(--line);
+    width:17px;height:17px;border-radius:50%;flex:0 0 17px;
+    border:1px solid var(--line);box-shadow:inset 0 0 0 2px var(--surface);
   }
   .grade-bolinha.vazia{background:repeating-linear-gradient(45deg,#eee,#eee 3px,#fff 3px,#fff 6px);}
   .grade-celulas{display:flex;gap:8px;flex-wrap:wrap;flex:1;}
   .admin-field .grade-celula{
-    display:flex;flex-direction:column;align-items:center;gap:3px;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
     margin-bottom:0;text-transform:none;
   }
   .admin-field .grade-celula span{
     display:block;font-size:.64rem;letter-spacing:.06em;
-    text-transform:uppercase;color:var(--muted);margin-bottom:0;
+    text-transform:uppercase;color:var(--muted);margin-bottom:0;font-weight:600;
   }
   .admin-field .grade-celula input[type=number]{
-    width:56px;padding:8px 4px;text-align:center;border:1px solid var(--line);
-    font-family:inherit;font-size:.88rem;color:var(--ink);background:#fbfbfb;
+    width:58px;padding:9px 4px;text-align:center;border:1px solid var(--line);
+    border-radius:var(--r-sm);font-family:inherit;font-size:.88rem;
+    color:var(--ink);background:#fcfaf7;
   }
-  .admin-field .grade-celula.ativa input[type=number]{border-color:var(--wine);background:#fff;font-weight:600;}
-  .grade-celula input::placeholder{color:#c9c9c9;}
+  .admin-field .grade-celula.ativa input[type=number]{
+    border-color:var(--wine);background:var(--surface);font-weight:600;
+    box-shadow:0 0 0 2px rgba(122,42,66,.08);
+  }
   .grade-total{
-    font-size:.76rem;color:var(--muted);margin-top:10px;letter-spacing:.02em;
+    font-size:.78rem;color:var(--muted);margin-top:11px;letter-spacing:.02em;
+    padding:9px 13px;background:var(--cream-soft);border-radius:var(--r-sm);
   }
 
-  /* ---- estoque por variação ---- */
-  .estoque-variacoes{display:flex;flex-direction:column;gap:6px;width:100%;}
+  /* ---------- estoque por variação ---------- */
+  .estoque-variacoes{display:flex;flex-direction:column;gap:5px;width:100%;}
   .estoque-var{
     display:flex;align-items:center;justify-content:space-between;gap:12px;
-    padding:6px 0;font-size:.84rem;color:var(--ink);
+    padding:5px 0;font-size:.84rem;color:var(--ink);
   }
-  .estoque-var.zerada span{color:#a5555f;}
+  .estoque-var.zerada span{color:#a5555f;font-weight:500;}
   .estoque-var input{flex:0 0 88px;}
-  .admin-save-btn{
-    padding:13px 30px;background:var(--wine);color:var(--cream);font-size:.8rem;
-    letter-spacing:.08em;text-transform:uppercase;margin-top:6px;
+  .campo-estoque{
+    width:84px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm);
+    font-family:inherit;color:var(--ink);text-align:center;background:var(--surface);
+    transition:border-color .2s, box-shadow .2s;
   }
-  .admin-save-btn:hover{background:var(--wine-deep);}
-  .admin-msg{font-size:.8rem;color:#3d6b34;margin-top:12px;min-height:18px;}
+  .campo-estoque:focus{outline:none;border-color:var(--wine);box-shadow:0 0 0 3px rgba(122,42,66,.09);}
 
-  .admin-color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;max-width:760px;}
-  .admin-color-card{background:#fff;border:1px solid var(--line);padding:16px;display:flex;align-items:center;gap:12px;}
-  .admin-color-card input[type=color]{width:44px;height:44px;border:none;padding:0;background:none;cursor:pointer;}
-  .admin-color-card .cc-label{font-size:.8rem;color:var(--ink);}
-  .admin-color-card .cc-hex{font-size:.7rem;color:var(--muted);}
+  /* ---------- aparência ---------- */
+  .admin-color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;max-width:780px;}
+  .admin-color-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:14px;display:flex;align-items:center;gap:13px;box-shadow:var(--sh-1);
+  }
+  .admin-color-card input[type=color]{
+    width:46px;height:46px;flex:0 0 46px;border:1px solid var(--line);
+    border-radius:var(--r-sm);padding:0;background:none;cursor:pointer;
+  }
+  .admin-color-card .cc-label{font-size:.84rem;color:var(--ink);font-weight:500;}
+  .admin-color-card .cc-hex{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums;}
   .admin-reset-btn{
-    margin-top:22px;padding:11px 22px;border:1px solid #a5555f;color:#a5555f;font-size:.76rem;
-    letter-spacing:.06em;text-transform:uppercase;
+    margin-top:22px;padding:12px 24px;border-radius:var(--r-full);
+    border:1px solid #a5555f;color:#a5555f;font-size:.78rem;
+    letter-spacing:.04em;transition:.22s var(--ease);
   }
   .admin-reset-btn:hover{background:#a5555f;color:#fff;}
 
@@ -1092,8 +1314,27 @@
     .admin-nav-btn .nav-curto{display:block;}
     .admin-nav-btn.active{background:rgba(251,240,225,.18);color:var(--cream);font-weight:600;}
 
-    .admin-main{padding:18px 14px calc(86px + env(safe-area-inset-bottom));}
-    .admin-panel h2{font-size:1.25rem;margin-bottom:16px;}
+    .admin-main{padding:16px 14px calc(86px + env(safe-area-inset-bottom));}
+    .admin-panel h2{font-size:1.3rem;margin-bottom:3px;}
+    .admin-sub{font-size:.78rem;}
+
+    /* titulo em cima, botao embaixo ocupando a largura */
+    .admin-cabeca{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:16px;}
+    .admin-btn{justify-content:center;width:100%;padding:13px 18px;}
+
+    /* filtros rolam de lado em vez de quebrar em varias linhas */
+    .admin-ferramentas{gap:9px;}
+    .admin-filtros{
+      flex-wrap:nowrap;overflow-x:auto;width:100%;
+      scrollbar-width:none;-webkit-overflow-scrolling:touch;
+      margin:0 -14px;padding:2px 14px;
+    }
+    .admin-filtros::-webkit-scrollbar{display:none;}
+    .admin-filtro{flex:0 0 auto;}
+    .admin-busca{flex:1 1 100%;height:44px;}
+    .admin-conexao{font-size:.8rem;padding:13px 14px;margin-bottom:18px;}
+    .admin-alerta{padding:13px 14px;font-size:.84rem;}
+    .admin-secao-titulo{font-size:.68rem;}
     .admin-conexao{font-size:.78rem;padding:12px 14px;margin-bottom:18px;}
 
     /* números da visão geral */
@@ -1492,12 +1733,12 @@
       <aside class="admin-sidebar">
         <div class="admin-brand serif">amora <span class="kicker" style="display:block;">admin</span></div>
         <nav class="admin-nav">
-          <button data-panel="overview" class="admin-nav-btn active"><span class="nav-ico">📊</span><span class="nav-longo">Visão geral</span><span class="nav-curto">Geral</span></button>
-          <button data-panel="products" class="admin-nav-btn"><span class="nav-ico">🛍️</span><span class="nav-longo">Produtos</span><span class="nav-curto">Peças</span></button>
-          <button data-panel="add" class="admin-nav-btn"><span class="nav-ico">➕</span><span class="nav-longo">Adicionar produto</span><span class="nav-curto">Novo</span></button>
-          <button data-panel="stock" class="admin-nav-btn"><span class="nav-ico">📦</span><span class="nav-longo">Estoque</span><span class="nav-curto">Estoque</span></button>
-          <button data-panel="appearance" class="admin-nav-btn"><span class="nav-ico">🎨</span><span class="nav-longo">Aparência</span><span class="nav-curto">Cores</span></button>
-          <button data-panel="settings" class="admin-nav-btn"><span class="nav-ico">⚙️</span><span class="nav-longo">Configurações</span><span class="nav-curto">Ajustes</span></button>
+          <button data-panel="overview" class="admin-nav-btn active"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1"/><rect x="17" y="3" width="4" height="17" rx="1"/></svg></span><span class="nav-longo">Visão geral</span><span class="nav-curto">Geral</span></button>
+          <button data-panel="products" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span><span class="nav-longo">Produtos</span><span class="nav-curto">Peças</span></button>
+          <button data-panel="add" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span><span class="nav-longo">Adicionar produto</span><span class="nav-curto">Novo</span></button>
+          <button data-panel="stock" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span><span class="nav-longo">Estoque</span><span class="nav-curto">Estoque</span></button>
+          <button data-panel="appearance" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="9.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="9.5" cy="15" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-longo">Aparência</span><span class="nav-curto">Cores</span></button>
+          <button data-panel="settings" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></span><span class="nav-longo">Configurações</span><span class="nav-curto">Ajustes</span></button>
         </nav>
         <a href="#" class="admin-back-link" id="adminBackToStore">← Ver a loja</a>
         <button class="admin-logout-btn" id="adminLogoutBtn">Sair</button>
@@ -2793,6 +3034,44 @@ let formColors = [];   // [{name, hex}]
 let formGrade = {};    // { "cor||tamanho": quantidade } — ausente = não vendemos
 let pendingDeleteId = null;
 const ALL_CATEGORIES = ["Conjuntos","Sutiãs","Calcinhas","Acessórios"];
+const ESTOQUE_BAIXO = 3;
+
+/* filtro compartilhado entre a visao geral e a lista de produtos */
+let filtroAdmin = { termo:'', status:'todos' };
+
+function semFoto(p){ return productImages(p).length === 0; }
+function estoqueBaixo(p){ const t = estoqueTotal(p); return t > 0 && t <= ESTOQUE_BAIXO; }
+function estaOculto(p){ return p.available === false; }
+function estaEsgotado(p){ return estoqueTotal(p) <= 0; }
+
+function produtosFiltrados(){
+  let lista = products.slice();
+  const t = filtroAdmin.termo.trim().toLowerCase();
+  if(t){
+    lista = lista.filter(p=>{
+      const cores = (p.colors||[]).map(c=>c.name).join(' ');
+      return [p.name, p.cat, p.fabric, p.description, cores]
+        .filter(Boolean).join(' ').toLowerCase().includes(t);
+    });
+  }
+  const st = filtroAdmin.status;
+  if(st === 'esgotado') lista = lista.filter(estaEsgotado);
+  else if(st === 'baixo') lista = lista.filter(estoqueBaixo);
+  else if(st === 'semfoto') lista = lista.filter(semFoto);
+  else if(st === 'oculto') lista = lista.filter(estaOculto);
+  return lista;
+}
+
+function irParaProdutos(status){
+  filtroAdmin = { termo:'', status: status || 'todos' };
+  switchAdminPanel('products');
+}
+
+/* usa os mesmos avisos flutuantes da loja, no lugar de alert() */
+function avisoAdmin(texto, tempo){
+  if(typeof aviso === 'function') aviso(texto, {tempo: tempo || 3600});
+  else alert(texto);
+}
 const COMMON_SIZES = ["P","M","G","GG","Único"];
 
 function refreshStorefront(){
@@ -2939,41 +3218,114 @@ function switchAdminPanel(name){
 /* ---------- visão geral ---------- */
 function renderOverviewPanel(){
   const total = products.length;
-  const available = products.filter(p=>p.available!==false).length;
-  const soldOut = products.filter(p=>estoqueTotal(p)<=0).length;
-  const totalStock = products.reduce((s,p)=>s+estoqueTotal(p),0);
+  const ocultos = products.filter(estaOculto).length;
+  const esgotados = products.filter(estaEsgotado).length;
+  const baixos = products.filter(estoqueBaixo).length;
+  const semFotos = products.filter(semFoto).length;
+  const pecas = products.reduce((s,p)=>s+estoqueTotal(p),0);
+  const valor = products.reduce((s,p)=>s + estoqueTotal(p) * (p.price||0), 0);
+
   const statusConexao = MODO_LOCAL
     ? (BIBLIOTECA_FALHOU
-      ? `<div class="admin-conexao local">
+      ? `<div class="admin-conexao local"><span class="ponto"></span><div>
            <strong>Modo local — a biblioteca do banco não carregou.</strong>
            As chaves estão preenchidas, mas o navegador não conseguiu baixar o Supabase.
            Verifique a conexão e recarregue a página.
-         </div>`
-      : `<div class="admin-conexao local">
+         </div></div>`
+      : `<div class="admin-conexao local"><span class="ponto"></span><div>
            <strong>Modo local — as clientes não veem o que você cadastra.</strong>
-           Os produtos estão salvos só neste navegador. Preencha SUPABASE_URL e
-           SUPABASE_KEY no arquivo index.html pra ligar o banco.
-         </div>`)
-    : `<div class="admin-conexao ok">
-         <strong>Conectado ao banco.</strong>
-         Tudo que você salvar aqui aparece na hora pra qualquer pessoa que abrir a loja.
+           Preencha SUPABASE_URL e SUPABASE_KEY no index.html pra ligar o banco.
+         </div></div>`)
+    : `<div class="admin-conexao ok"><span class="ponto"></span><div>
+         <strong>Conectado ao banco</strong>
+         Tudo que você salvar aqui aparece na hora pra quem abrir a loja.
+       </div></div>`;
+
+  const seta = '<svg class="seta" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+  const alertas = [];
+  if(esgotados) alertas.push({n:'grave', chave:'esgotado', txt:`<b>${esgotados}</b> ${esgotados===1?'produto esgotado':'produtos esgotados'} — ninguém consegue comprar`});
+  if(baixos)    alertas.push({n:'medio', chave:'baixo',   txt:`<b>${baixos}</b> com estoque baixo (até ${ESTOQUE_BAIXO} peças)`});
+  if(semFotos)  alertas.push({n:'medio', chave:'semfoto', txt:`<b>${semFotos}</b> sem foto — a loja mostra uma imagem de exemplo`});
+  if(ocultos)   alertas.push({n:'leve',  chave:'oculto',  txt:`<b>${ocultos}</b> ${ocultos===1?'oculto':'ocultos'} da loja`});
+
+  const listaAlertas = alertas.length
+    ? alertas.map(a=>`
+        <button class="admin-alerta" data-ir="${a.chave}">
+          <span class="marca ${a.n}"></span>
+          <span class="texto">${a.txt}</span>
+          ${seta}
+        </button>`).join('')
+    : `<div class="admin-tudo-certo">
+         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+         Está tudo em ordem — nenhum produto pedindo atenção.
        </div>`;
+
   document.getElementById('panel-overview').innerHTML = `
-    <h2>Visão geral</h2>
+    <div class="admin-cabeca">
+      <div>
+        <h2>Visão geral</h2>
+        <div class="admin-sub">Um resumo da loja e o que precisa da sua atenção agora.</div>
+      </div>
+      <button class="admin-btn" id="atalhoNovo">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar produto
+      </button>
+    </div>
     ${statusConexao}
     <div class="admin-stat-grid">
-      <div class="admin-stat"><span class="n">${total}</span><span class="l">produtos cadastrados</span></div>
-      <div class="admin-stat"><span class="n">${available}</span><span class="l">disponíveis</span></div>
-      <div class="admin-stat"><span class="n">${soldOut}</span><span class="l">esgotados</span></div>
-      <div class="admin-stat"><span class="n">${totalStock}</span><span class="l">itens em estoque (total)</span></div>
+      <div class="admin-stat"><span class="n">${total - ocultos}</span><span class="l">produtos à venda${ocultos?` (+${ocultos} oculto${ocultos>1?'s':''})`:''}</span></div>
+      <div class="admin-stat"><span class="n">${esgotados}</span><span class="l">esgotados</span></div>
+      <div class="admin-stat"><span class="n">${pecas}</span><span class="l">peças em estoque</span></div>
+      <div class="admin-stat"><span class="n">${money(valor)}</span><span class="l">valor do estoque</span></div>
     </div>
+    <div class="admin-secao-titulo">Precisa de atenção</div>
+    <div class="admin-atencao">${listaAlertas}</div>
   `;
+
+  const novo = document.getElementById('atalhoNovo');
+  if(novo) novo.addEventListener('click', ()=>{ editingProductId=null; switchAdminPanel('add'); });
+  document.querySelectorAll('#panel-overview .admin-alerta').forEach(b=>{
+    b.addEventListener('click', ()=>irParaProdutos(b.dataset.ir));
+  });
 }
 
 /* ---------- lista de produtos ---------- */
 function renderProductsPanel(){
+  const lista = produtosFiltrados();
+  const contagens = {
+    todos: products.length,
+    esgotado: products.filter(estaEsgotado).length,
+    baixo: products.filter(estoqueBaixo).length,
+    semfoto: products.filter(semFoto).length,
+    oculto: products.filter(estaOculto).length,
+  };
+  const filtros = [
+    ['todos','Todos'], ['esgotado','Esgotados'], ['baixo','Estoque baixo'],
+    ['semfoto','Sem foto'], ['oculto','Ocultos'],
+  ];
+
   document.getElementById('panel-products').innerHTML = `
-    <h2>Produtos</h2>
+    <div class="admin-cabeca">
+      <div>
+        <h2>Produtos</h2>
+        <div class="admin-sub">${lista.length} de ${products.length} ${products.length===1?'produto':'produtos'}</div>
+      </div>
+      <button class="admin-btn" id="listaNovo">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar produto
+      </button>
+    </div>
+
+    <div class="admin-ferramentas">
+      <div class="admin-busca">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        <input type="search" id="buscaAdmin" placeholder="Buscar por nome, categoria, cor..." value="${esc(filtroAdmin.termo)}">
+      </div>
+      <div class="admin-filtros">
+        ${filtros.map(([k,r])=>`<button class="admin-filtro ${filtroAdmin.status===k?'on':''}" data-status="${k}">${r}${contagens[k]?`<span class="qt">${contagens[k]}</span>`:''}</button>`).join('')}
+      </div>
+    </div>
+
     <div class="admin-table-wrap">
       <table class="admin-table tabela-produtos">
         <thead><tr><th></th><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr></thead>
@@ -2981,32 +3333,66 @@ function renderProductsPanel(){
       </table>
     </div>
   `;
+
   const rows = document.getElementById('adminProductRows');
-  rows.innerHTML = products.map(p=>{
-    const soldOut = estoqueTotal(p) <= 0;
-    const statusBadge = p.available===false
-      ? `<span class="admin-badge hidden">Oculto</span>`
-      : soldOut ? `<span class="admin-badge out">Esgotado</span>` : `<span class="admin-badge ok">Disponível</span>`;
-    const imgs = productImages(p);
-    const img = imgs[0] || placeholderImg(p.colors ? p.colors[0].hex : undefined);
-    const extra = imgs.length > 1 ? `<span class="cc-hex">+${imgs.length-1}</span>` : '';
-    return `
+  if(!lista.length){
+    rows.innerHTML = `<tr><td colspan="7"><div class="admin-vazio">
+      <strong>Nenhum produto aqui</strong>
+      ${products.length ? 'Nenhum produto bate com essa busca ou filtro.' : 'Cadastre a sua primeira peça pra ela aparecer na loja.'}
+    </div></td></tr>`;
+  } else {
+    rows.innerHTML = lista.map(p=>{
+      const total = estoqueTotal(p);
+      const badge = estaOculto(p)
+        ? '<span class="admin-badge hidden">Oculto</span>'
+        : total <= 0 ? '<span class="admin-badge out">Esgotado</span>'
+        : total <= ESTOQUE_BAIXO ? `<span class="admin-badge baixo">Restam ${total}</span>`
+        : '<span class="admin-badge ok">Disponível</span>';
+      const imgs = productImages(p);
+      const img = imgs[0] || placeholderImg(p.colors ? p.colors[0].hex : undefined);
+      const extra = imgs.length > 1 ? `<span class="cc-hex">+${imgs.length-1}</span>` : '';
+      const olho = estaOculto(p)
+        ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 3l18 18M10.6 10.7a2 2 0 0 0 2.8 2.8"/><path d="M9.4 5.2A9.7 9.7 0 0 1 12 5c5 0 9 4.5 9 7a12 12 0 0 1-2.4 3.4M6.2 6.6A12.4 12.4 0 0 0 3 12c0 2.5 4 7 9 7a9.9 9.9 0 0 0 3.4-.6"/></svg>'
+        : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 12s3.6-7 9-7 9 7 9 7-3.6 7-9 7-9-7-9-7z"/><circle cx="12" cy="12" r="2.6"/></svg>';
+      return `
       <tr>
         <td class="cel-foto"><img src="${img}" alt="">${extra}</td>
-        <td class="cel-nome">${p.name}</td>
-        <td data-rotulo="Categoria">${p.cat}</td>
+        <td class="cel-nome">${esc(p.name)}</td>
+        <td data-rotulo="Categoria">${esc(p.cat)}</td>
         <td data-rotulo="Preço">${money(p.price)}</td>
-        <td data-rotulo="Estoque">${estoqueTotal(p)}${temGrade(p)?` <span class="cc-hex">(${p.variacoes.length} var.)</span>`:''}</td>
-        <td data-rotulo="Status">${statusBadge}</td>
+        <td data-rotulo="Estoque">${total}${temGrade(p)?` <span class="cc-hex">(${p.variacoes.length} var.)</span>`:''}</td>
+        <td data-rotulo="Status">${badge}</td>
         <td class="cel-acoes">
           <div class="admin-row-actions">
             <button class="admin-mini-btn" data-edit="${p.id}">Editar</button>
-            <button class="admin-mini-btn danger" data-del="${p.id}">Excluir</button>
+            <button class="admin-mini-btn icone" data-ver="${p.id}" title="${estaOculto(p)?'Mostrar na loja':'Ocultar da loja'}">${olho}</button>
+            <button class="admin-mini-btn danger icone" data-del="${p.id}" title="Excluir">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>
+            </button>
           </div>
         </td>
-      </tr>
-    `;
-  }).join('');
+      </tr>`;
+    }).join('');
+  }
+
+  const campo = document.getElementById('buscaAdmin');
+  let temporizador;
+  campo.addEventListener('input', ()=>{
+    clearTimeout(temporizador);
+    temporizador = setTimeout(()=>{
+      filtroAdmin.termo = campo.value;
+      renderProductsPanel();
+      const novo = document.getElementById('buscaAdmin');
+      novo.focus();
+      novo.setSelectionRange(novo.value.length, novo.value.length);
+    }, 220);
+  });
+
+  document.querySelectorAll('#panel-products .admin-filtro').forEach(b=>{
+    b.addEventListener('click', ()=>{ filtroAdmin.status = b.dataset.status; renderProductsPanel(); });
+  });
+  document.getElementById('listaNovo').addEventListener('click', ()=>{ editingProductId=null; switchAdminPanel('add'); });
+
   rows.querySelectorAll('[data-edit]').forEach(b=>{
     b.addEventListener('click', ()=>{
       editingProductId = Number(b.dataset.edit);
@@ -3018,6 +3404,27 @@ function renderProductsPanel(){
     b.addEventListener('click', ()=>{
       pendingDeleteId = Number(b.dataset.del);
       document.getElementById('confirmDeleteOverlay').classList.add('open');
+    });
+  });
+  rows.querySelectorAll('[data-ver]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const p = products.find(pr=>pr.id===Number(b.dataset.ver));
+      if(!p) return;
+      const anterior = p.available;
+      p.available = estaOculto(p);
+      b.disabled = true;
+      try{
+        if(!MODO_LOCAL) await atualizarProduto(p.id, p);
+        refreshStorefront();
+        renderProductsPanel();
+        renderOverviewPanel();
+        avisoAdmin(p.available ? 'Produto visível na loja' : 'Produto oculto da loja');
+      }catch(e){
+        console.error(e);
+        p.available = anterior;
+        b.disabled = false;
+        avisoAdmin('Não consegui salvar: ' + (e.message || 'erro de conexão'));
+      }
     });
   });
 }
@@ -3038,7 +3445,7 @@ document.getElementById('confirmDeleteYes').addEventListener('click', async ()=>
       renderOverviewPanel();
     }catch(e){
       console.error(e);
-      alert('Não consegui excluir: ' + (e.message || 'erro de conexão'));
+      avisoAdmin('Não consegui excluir: ' + (e.message || 'erro de conexão'));
     }finally{
       btn.disabled = false;
     }
@@ -3202,7 +3609,7 @@ function renderProductForm(p){
         }
         dropText.innerHTML = dropTextHTML;
         renderImageGrid();
-        if(falhas) alert(falhas + ' foto(s) não foram enviadas. Verifique a conexão e tente de novo.');
+        if(falhas) avisoAdmin(falhas + ' foto(s) não foram enviadas. Verifique a conexão e tente de novo.');
       });
   });
 
@@ -3522,7 +3929,7 @@ function renderStockPanel(){
       console.error(e);
       desfazer();
       pintarStatus(p);
-      alert('Não consegui salvar o estoque: ' + (e.message || 'erro de conexão'));
+      avisoAdmin('Não consegui salvar o estoque: ' + (e.message || 'erro de conexão'));
     }
   }
 
@@ -3743,7 +4150,7 @@ function renderSettingsPanel(){
       renderOverviewPanel();
     }catch(e){
       console.error(e);
-      alert('Não consegui restaurar: ' + (e.message || 'erro de conexão'));
+      avisoAdmin('Não consegui restaurar: ' + (e.message || 'erro de conexão'));
     }finally{
       btn.disabled = false;
     }
