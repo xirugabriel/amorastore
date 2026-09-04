@@ -29,7 +29,7 @@
   body{background:var(--color-bg) !important;color:var(--color-text) !important;}
   .hero h1, .secao-topo h2, .about h2, .d-card h3, .drawer-head h3, .modal-box h3,
   .card-name, .ficha-nome, .conf-item h4{color:var(--color-primary) !important;}
-  .btn-solid, .checkout-btn, .size-pill.selected, .cat-tab.active,
+  .btn-solid, .checkout-btn, .size-pill.selected, .cat-tab.active, .tam-tab.active,
   .selo.promo, .sacola-badge, .barra-item .conta{
     background:var(--color-button) !important;border-color:var(--color-button) !important;
   }
@@ -303,6 +303,31 @@
   .ordenar select{
     border:none;background:none;outline:none;font-family:inherit;
     font-size:.76rem;color:var(--ink);cursor:pointer;padding:0 4px;height:100%;
+  }
+  .barra-tamanhos{margin-bottom:9px;gap:11px;}
+  .filtro-rotulo{
+    flex:0 0 auto;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;
+  }
+  .tam-chips{
+    display:flex;gap:6px;overflow-x:auto;flex:1;padding:2px 1px;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .tam-chips::-webkit-scrollbar{display:none;}
+  .tam-tab{
+    flex:0 0 auto;min-width:40px;padding:7px 14px;border-radius:var(--r-full);
+    border:1px solid var(--line);background:var(--surface);
+    font-size:.74rem;color:var(--muted);white-space:nowrap;
+    transition:all .22s var(--ease);
+  }
+  .tam-tab:hover{border-color:var(--wine);color:var(--wine);}
+  .tam-tab.active{
+    background:var(--wine-deep);border-color:var(--wine-deep);color:var(--cream);
+    box-shadow:var(--sh-1);
+  }
+  .limpar-filtro{
+    margin-left:10px;font-size:.72rem;color:var(--wine);
+    text-decoration:underline;text-underline-offset:3px;
   }
   .resultado-info{
     max-width:1240px;margin:0 auto 18px;
@@ -851,6 +876,9 @@
     .card-cat{font-size:.58rem;}
     .barra-catalogo{margin-bottom:20px;padding:10px 0;}
     .cat-tab{padding:9px 16px;font-size:.72rem;}
+    .barra-tamanhos{margin-bottom:8px;gap:9px;}
+    .filtro-rotulo{font-size:.58rem;letter-spacing:.1em;}
+    .tam-tab{padding:7px 13px;font-size:.72rem;min-width:36px;}
     .ordenar{height:38px;padding:0 6px 0 11px;}
     .ordenar select{font-size:.72rem;}
     .secao-topo{margin-bottom:22px;}
@@ -1541,6 +1569,10 @@
   </div>
 
   <div class="barra-catalogo" id="barraCatalogo">
+    <div class="barra-linha barra-tamanhos" id="barraTamanhos">
+      <span class="filtro-rotulo">Tamanho</span>
+      <div class="tam-chips" id="tamBar"></div>
+    </div>
     <div class="barra-linha">
       <div class="cat-chips" id="catBar"></div>
       <div class="ordenar">
@@ -2107,6 +2139,7 @@ function money(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'B
    LOJA
    ============================================================ */
 let ordenacao = 'destaque';
+let tamanhoFiltro = null;   // null = todos os tamanhos
 let termoBusca = '';
 const CHAVE_SACOLA = 'amora_sacola';
 
@@ -2170,6 +2203,7 @@ function renderCatBar(){
     btn.addEventListener('click', ()=>{
       activeCat = btn.dataset.cat;
       renderCatBar();
+      renderTamBar();
       renderGrid();
       const alvo = document.getElementById('catalogo');
       const topo = alvo.getBoundingClientRect().top + window.scrollY - 70;
@@ -2178,10 +2212,70 @@ function renderCatBar(){
   });
 }
 
+/* ---------- filtro por tamanho ---------- */
+
+/* o produto tem esse tamanho COM peça em estoque? */
+function temTamanhoDisponivel(p, tam){
+  if(!tam) return true;
+  if(temGrade(p)){
+    return p.variacoes.some(v => mesmoValor(v.tamanho, tam) && (v.estoque || 0) > 0);
+  }
+  // produto antigo, sem grade: vale a lista de tamanhos e o estoque único
+  return (p.sizes || []).some(t => mesmoValor(t, tam)) && estoqueTotal(p) > 0;
+}
+
+const ORDEM_TAMANHOS = ['P','M','G','GG','Único'];
+
+/* só oferece tamanhos que realmente rendem resultado na categoria atual */
+function tamanhosOferecidos(){
+  const base = products.filter(p => p.available !== false
+    && (activeCat === 'Todos' || p.cat === activeCat));
+  const achados = new Set();
+  base.forEach(p=>{
+    if(temGrade(p)){
+      p.variacoes.forEach(v=>{
+        if(v.tamanho && (v.estoque || 0) > 0) achados.add(String(v.tamanho).trim());
+      });
+    } else if(estoqueTotal(p) > 0){
+      (p.sizes || []).forEach(t=>{ if(t) achados.add(String(t).trim()); });
+    }
+  });
+  return [...achados].sort((a,b)=>{
+    const ia = ORDEM_TAMANHOS.indexOf(a), ib = ORDEM_TAMANHOS.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, 'pt-BR');
+  });
+}
+
+function renderTamBar(){
+  const bar = document.getElementById('tamBar');
+  const linha = document.getElementById('barraTamanhos');
+  if(!bar || !linha) return;
+
+  const tamanhos = tamanhosOferecidos();
+  // se o tamanho escolhido sumiu (mudou de categoria), volta pra todos
+  if(tamanhoFiltro && !tamanhos.includes(tamanhoFiltro)) tamanhoFiltro = null;
+  // sem tamanho nenhum pra oferecer, esconde a linha inteira
+  linha.style.display = tamanhos.length ? '' : 'none';
+  if(!tamanhos.length) return;
+
+  bar.innerHTML =
+    `<button class="tam-tab ${!tamanhoFiltro?'active':''}" data-tam="">Todos</button>` +
+    tamanhos.map(t=>`<button class="tam-tab ${tamanhoFiltro===t?'active':''}" data-tam="${esc(t)}">${esc(t)}</button>`).join('');
+
+  bar.querySelectorAll('.tam-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tamanhoFiltro = btn.dataset.tam || null;
+      renderTamBar();
+      renderGrid();
+    });
+  });
+}
+
 /* ---------- filtro e ordenação ---------- */
 function listaVisivel(){
   let lista = products.filter(p=>p.available!==false);
   if(activeCat !== 'Todos') lista = lista.filter(p=>p.cat===activeCat);
+  if(tamanhoFiltro) lista = lista.filter(p=>temTamanhoDisponivel(p, tamanhoFiltro));
   if(termoBusca){
     const t = termoBusca.toLowerCase();
     lista = lista.filter(p=>{
@@ -2259,16 +2353,34 @@ function renderGrid(){
   const lista = listaVisivel();
 
   if(info){
-    info.textContent = lista.length
-      ? `${lista.length} ${lista.length===1?'peça encontrada':'peças encontradas'}`
-      : '';
+    if(lista.length){
+      const sufixo = tamanhoFiltro ? ` no tamanho ${esc(tamanhoFiltro)}` : '';
+      info.innerHTML = `${lista.length} ${lista.length===1?'peça encontrada':'peças encontradas'}${sufixo}` +
+        (tamanhoFiltro ? `<button class="limpar-filtro" id="limparTamanho">limpar filtro</button>` : '');
+    } else {
+      info.textContent = '';
+    }
+    const limpar = document.getElementById('limparTamanho');
+    if(limpar) limpar.addEventListener('click', ()=>{
+      tamanhoFiltro = null; renderTamBar(); renderGrid();
+    });
   }
 
   if(!lista.length){
-    grid.innerHTML = `<div class="catalogo-vazio">
-      <strong>Nada por aqui ainda</strong>
-      ${activeCat==='Todos' ? 'Assim que as peças forem cadastradas elas aparecem aqui.' : `Não temos peças em ${esc(activeCat)} no momento.`}
-    </div>`;
+    if(tamanhoFiltro){
+      grid.innerHTML = `<div class="catalogo-vazio">
+        <strong>Nenhuma peça no tamanho ${esc(tamanhoFiltro)}</strong>
+        ${activeCat==='Todos' ? 'Tente outro tamanho' : `Não temos ${esc(activeCat)} nesse tamanho — tente outro tamanho ou outra categoria`}, ou chame a gente no WhatsApp pra saber de reposição.
+        <div style="margin-top:18px;"><button class="btn btn-line" id="verTodosTamanhos">Ver todos os tamanhos</button></div>
+      </div>`;
+      const btn = document.getElementById('verTodosTamanhos');
+      if(btn) btn.addEventListener('click', ()=>{ tamanhoFiltro = null; renderTamBar(); renderGrid(); });
+    } else {
+      grid.innerHTML = `<div class="catalogo-vazio">
+        <strong>Nada por aqui ainda</strong>
+        ${activeCat==='Todos' ? 'Assim que as peças forem cadastradas elas aparecem aqui.' : `Não temos peças em ${esc(activeCat)} no momento.`}
+      </div>`;
+    }
     return;
   }
 
@@ -2313,13 +2425,28 @@ let fichaEmpurrouHistorico = false;
 function abrirFicha(id){
   const p = products.find(x=>x.id===id);
   if(!p) return;
-  const primeiraCor = p.colors && p.colors.length ? p.colors[0].name : null;
-  const tams = tamanhosDaCor(p, primeiraCor);
-  fichaEstado = {
-    id, cor: primeiraCor,
-    tamanho: tams.length === 1 && estoqueDaVariacao(p, primeiraCor, tams[0]) > 0 ? tams[0] : null,
-    qtd: 1, foto: 0
-  };
+  let cor = p.colors && p.colors.length ? p.colors[0].name : null;
+  let tamanho = null;
+
+  // veio de um filtro de tamanho? já abre nesse tamanho, numa cor que o tenha
+  if(tamanhoFiltro && temTamanhoDisponivel(p, tamanhoFiltro)){
+    const comEstoque = temGrade(p)
+      ? p.variacoes.find(v => mesmoValor(v.tamanho, tamanhoFiltro) && (v.estoque||0) > 0)
+      : null;
+    if(comEstoque && comEstoque.cor){
+      // volta pro nome exato da bolinha (a variação pode ter espaço sobrando)
+      const nome = String(comEstoque.cor).trim();
+      const declarada = (p.colors || []).find(c => mesmoValor(c.name, nome));
+      cor = declarada ? declarada.name : nome;
+    }
+    tamanho = tamanhoFiltro;
+  }
+
+  const tams = tamanhosDaCor(p, cor);
+  if(tamanho && tams.indexOf(tamanho) === -1) tamanho = null;
+  if(!tamanho && tams.length === 1 && estoqueDaVariacao(p, cor, tams[0]) > 0) tamanho = tams[0];
+
+  fichaEstado = { id, cor, tamanho, qtd: 1, foto: 0 };
   renderFicha();
   ficha.classList.add('aberta');
   fichaFundo.classList.add('aberta');
@@ -2996,6 +3123,7 @@ function comLimiteDeTempo(promessa, ms){
 function montarLoja(){
   applyTheme(theme);
   renderCatBar();
+  renderTamBar();
   recuperarSacola();
   renderCart();
   renderGrid();
