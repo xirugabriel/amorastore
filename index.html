@@ -3203,13 +3203,17 @@ document.querySelectorAll('.admin-nav-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>switchAdminPanel(btn.dataset.panel));
 });
 
-function switchAdminPanel(name){
+function switchAdminPanel(name, produtoParaEditar){
   document.querySelectorAll('.admin-nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.panel===name));
   document.querySelectorAll('.admin-panel').forEach(p=>p.style.display='none');
   document.getElementById('panel-'+name).style.display='block';
   if(name==='overview') renderOverviewPanel();
   if(name==='products') renderProductsPanel();
-  if(name==='add'){ editingProductId=null; renderProductForm(null); }
+  if(name==='add'){
+    // sem produto = cadastro novo; com produto = edição
+    editingProductId = produtoParaEditar ? produtoParaEditar.id : null;
+    renderProductForm(produtoParaEditar || null);
+  }
   if(name==='stock') renderStockPanel();
   if(name==='appearance') renderAppearancePanel();
   if(name==='settings') renderSettingsPanel();
@@ -3395,9 +3399,9 @@ function renderProductsPanel(){
 
   rows.querySelectorAll('[data-edit]').forEach(b=>{
     b.addEventListener('click', ()=>{
-      editingProductId = Number(b.dataset.edit);
-      switchAdminPanel('add');
-      renderProductForm(products.find(p=>p.id===editingProductId));
+      const produto = products.find(p=>p.id === Number(b.dataset.edit));
+      if(!produto) return;
+      switchAdminPanel('add', produto);
     });
   });
   rows.querySelectorAll('[data-del]').forEach(b=>{
@@ -3473,9 +3477,15 @@ function renderProductForm(p){
     });
   }
   const title = p ? 'Editar produto' : 'Adicionar produto';
+  const subtitulo = p
+    ? `Alterando <b>${esc(p.name)}</b> — as mudanças substituem o produto existente.`
+    : 'Preencha os dados da peça. Ela entra na loja assim que você salvar.';
 
   document.getElementById('panel-add').innerHTML = `
-    <h2>${title}</h2>
+    <div class="admin-cabeca"><div>
+      <h2>${title}</h2>
+      <div class="admin-sub">${subtitulo}</div>
+    </div></div>
     <div class="admin-form">
       <div class="admin-field">
         <label>Fotos do produto</label>
