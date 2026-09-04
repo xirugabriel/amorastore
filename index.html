@@ -1253,6 +1253,15 @@
   }
   .estoque-var.zerada span{color:#a5555f;font-weight:500;}
   .estoque-var input{flex:0 0 88px;}
+  .estoque-campo{position:relative;display:inline-flex;align-items:center;}
+  .estoque-selo{
+    position:absolute;right:-20px;top:50%;transform:translateY(-50%);
+    font-size:.8rem;font-weight:700;width:16px;text-align:center;
+    opacity:0;transition:opacity .2s;
+  }
+  .estoque-selo.salvando{opacity:.5;color:var(--muted);}
+  .estoque-selo.ok{opacity:1;color:#3d6b34;}
+  .estoque-selo.erro{opacity:1;color:#a5555f;}
   .campo-estoque{
     width:84px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm);
     font-family:inherit;color:var(--ink);text-align:center;background:var(--surface);
@@ -1866,7 +1875,11 @@ function temGrade(p){
   return Array.isArray(p.variacoes) && p.variacoes.length > 0;
 }
 function mesmoValor(a, b){
-  return (a == null ? null : a) === (b == null ? null : b);
+  // compara ignorando espaços nas pontas: cores gravadas como "Vermelho "
+  // precisam casar com a bolinha "Vermelho"
+  const na = a == null ? null : String(a).trim();
+  const nb = b == null ? null : String(b).trim();
+  return na === nb;
 }
 function acharVariacao(p, cor, tamanho){
   if(!temGrade(p)) return null;
@@ -3462,10 +3475,13 @@ document.getElementById('confirmDeleteYes').addEventListener('click', async ()=>
 function renderProductForm(p){
   formSizes = p && p.sizes ? p.sizes.slice() : [];
   formImages = p ? productImages(p).slice() : [];
-  formColors = p && p.colors ? p.colors.map(c=>({name:c.name, hex:c.hex})) : [];
+  formColors = p && p.colors ? p.colors.map(c=>({name:(c.name||'').trim(), hex:c.hex})) : [];
   formGrade = {};
   if(p && temGrade(p)){
-    p.variacoes.forEach(v=>{ formGrade[chaveGrade(v.cor, v.tamanho)] = v.estoque; });
+    p.variacoes.forEach(v=>{
+      const nomeCor = v.cor == null ? null : String(v.cor).trim();
+      formGrade[chaveGrade(nomeCor || null, v.tamanho)] = v.estoque;
+    });
   } else if(p){
     // produto antigo: espalha o estoque único na primeira combinação
     const cores = formColors.length ? formColors.map(c=>c.name) : [null];
@@ -3846,7 +3862,9 @@ function montarVariacoes(){
     tams.forEach(t=>{
       const v = formGrade[chaveGrade(cor, t)];
       if(v === undefined || v === '') return;
-      lista.push({ cor: cor || null, tamanho: t || null, estoque: Math.max(0, Number(v) || 0) });
+      // o nome vai limpo, igual ao que é gravado em colors
+      const nomeCor = cor == null ? null : String(cor).trim();
+      lista.push({ cor: nomeCor || null, tamanho: t || null, estoque: Math.max(0, Number(v) || 0) });
     });
   });
   return lista;
@@ -3907,8 +3925,11 @@ function renderStockPanel(){
         return `
           <label class="estoque-var ${(v.estoque||0)<=0?'zerada':''}">
             <span>${esc(rotulo)}</span>
-            <input type="number" min="0" step="1" inputmode="numeric" class="campo-estoque"
-              data-var-produto="${p.id}" data-var-indice="${i}" value="${v.estoque||0}">
+            <span class="estoque-campo">
+              <input type="number" min="0" step="1" inputmode="numeric" class="campo-estoque"
+                data-var-produto="${p.id}" data-var-indice="${i}" value="${v.estoque||0}">
+              <span class="estoque-selo" data-selo="${p.id}-${i}"></span>
+            </span>
           </label>`;
       }).join('') + `</div>`;
     } else {
@@ -3930,16 +3951,27 @@ function renderStockPanel(){
       : `<span class="admin-badge ok">${total} no total</span>`;
   }
 
-  async function gravarEstoque(p, desfazer){
+  function marcarSelo(chave, estado, texto){
+    const selo = chave && document.querySelector(`[data-selo="${chave}"]`);
+    if(!selo) return;
+    selo.className = 'estoque-selo ' + estado;
+    selo.textContent = texto;
+    if(estado === 'ok') setTimeout(()=>{ if(selo.classList.contains('ok')) selo.className = 'estoque-selo'; }, 2200);
+  }
+
+  async function gravarEstoque(p, desfazer, chave){
+    marcarSelo(chave, 'salvando', '...');
     try{
       if(!MODO_LOCAL) await atualizarProduto(p.id, p);
       refreshStorefront();
       renderOverviewPanel();
+      marcarSelo(chave, 'ok', '✓');
     }catch(e){
       console.error(e);
       desfazer();
       pintarStatus(p);
-      avisoAdmin('Não consegui salvar o estoque: ' + (e.message || 'erro de conexão'));
+      marcarSelo(chave, 'erro', '!');
+      avisoAdmin('Não consegui salvar o estoque: ' + (e.message || 'erro de conexão'), 7000);
     }
   }
 
@@ -3957,7 +3989,7 @@ function renderStockPanel(){
         p.variacoes[i].estoque = anterior;
         p.stock = estoqueTotal(p);
         input.value = anterior;
-      });
+      }, `${p.id}-${i}`);
     });
   });
 
