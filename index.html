@@ -1169,6 +1169,69 @@
   .admin-badge.baixo{background:#f7eeda;color:#8a6a2f;}
   .admin-badge.hidden{background:#ececec;color:#7b7b7b;}
 
+  /* ---------- pedidos ---------- */
+  .admin-nav-btn{position:relative;}
+  .nav-conta{
+    display:none;min-width:19px;height:19px;padding:0 5px;margin-left:auto;
+    border-radius:var(--r-full);background:#a5555f;color:#fff;
+    font-size:.64rem;font-weight:700;align-items:center;justify-content:center;
+  }
+  .nav-conta.visivel{display:inline-flex;}
+
+  .pedido-cartao{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:16px 18px;margin-bottom:12px;box-shadow:var(--sh-1);
+  }
+  .pedido-cartao.pendente{border-left:3px solid #b8862f;}
+  .pedido-cartao.concluido{border-left:3px solid #3d6b34;}
+  .pedido-cartao.cancelado{border-left:3px solid var(--line);opacity:.72;}
+  .pedido-topo{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-bottom:12px;flex-wrap:wrap;
+  }
+  .pedido-codigo{
+    font-family:'Fraunces',serif;font-size:1.1rem;color:var(--wine-deep);
+    font-weight:600;letter-spacing:.02em;
+  }
+  .pedido-data{font-size:.74rem;color:var(--muted);margin-left:10px;}
+  .pedido-itens{
+    border-top:1px solid var(--cream-soft);border-bottom:1px solid var(--cream-soft);
+    padding:4px 0;margin-bottom:11px;
+  }
+  .pedido-item{
+    display:flex;align-items:baseline;gap:10px;padding:7px 0;font-size:.86rem;
+  }
+  .pedido-qtd{
+    flex:0 0 auto;font-weight:600;color:var(--wine);min-width:26px;
+  }
+  .pedido-nome{flex:1;min-width:0;color:var(--ink);}
+  .pedido-var{color:var(--muted);font-size:.78rem;}
+  .pedido-preco{flex:0 0 auto;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .pedido-total{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:.82rem;color:var(--muted);margin-bottom:13px;
+  }
+  .pedido-total strong{
+    font-family:'Fraunces',serif;font-size:1.15rem;color:var(--wine-deep);font-weight:500;
+  }
+  .pedido-alerta{
+    background:#fdf5f5;border:1px solid #edd6d6;border-radius:var(--r-sm);
+    padding:11px 13px;margin-bottom:13px;font-size:.78rem;color:#a5555f;line-height:1.6;
+  }
+  .pedido-alerta strong{display:block;margin-bottom:4px;}
+  .pedido-acoes{display:flex;gap:9px;align-items:center;flex-wrap:wrap;}
+
+  @media(max-width:820px){
+    .pedido-cartao{padding:14px;}
+    .pedido-acoes{flex-direction:column;align-items:stretch;}
+    .pedido-acoes .admin-btn,
+    .pedido-acoes .admin-mini-btn{width:100%;justify-content:center;padding:12px;}
+    .nav-conta{
+      position:absolute;top:2px;right:calc(50% - 20px);margin:0;
+      min-width:16px;height:16px;font-size:.56rem;
+    }
+  }
+
   /* ---------- formulário ---------- */
   .admin-form{
     background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
@@ -1852,6 +1915,7 @@
           <button data-panel="overview" class="admin-nav-btn active"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1"/><rect x="17" y="3" width="4" height="17" rx="1"/></svg></span><span class="nav-longo">Visão geral</span><span class="nav-curto">Geral</span></button>
           <button data-panel="products" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span><span class="nav-longo">Produtos</span><span class="nav-curto">Peças</span></button>
           <button data-panel="add" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span><span class="nav-longo">Adicionar produto</span><span class="nav-curto">Novo</span></button>
+          <button data-panel="pedidos" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9.5 13.5l1.8 1.8 3.4-3.4"/></svg></span><span class="nav-longo">Pedidos</span><span class="nav-curto">Pedidos</span><span class="nav-conta" id="navContaPedidos"></span></button>
           <button data-panel="stock" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span><span class="nav-longo">Estoque</span><span class="nav-curto">Estoque</span></button>
           <button data-panel="appearance" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="9.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="9.5" cy="15" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-longo">Aparência</span><span class="nav-curto">Cores</span></button>
           <button data-panel="settings" class="admin-nav-btn"><span class="nav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></span><span class="nav-longo">Configurações</span><span class="nav-curto">Ajustes</span></button>
@@ -1864,6 +1928,7 @@
         <section id="panel-overview" class="admin-panel"></section>
         <section id="panel-products" class="admin-panel" style="display:none;"></section>
         <section id="panel-add" class="admin-panel" style="display:none;"></section>
+        <section id="panel-pedidos" class="admin-panel" style="display:none;"></section>
         <section id="panel-stock" class="admin-panel" style="display:none;"></section>
         <section id="panel-appearance" class="admin-panel" style="display:none;"></section>
         <section id="panel-settings" class="admin-panel" style="display:none;"></section>
@@ -2179,6 +2244,34 @@ async function excluirProduto(id){
 }
 async function salvarTema(t){
   const { error } = await db.from('config').upsert({ chave:'tema', valor:t }, { onConflict:'chave' });
+  if(error) throw error;
+}
+
+/* ---------- pedidos ---------- */
+/* A cliente não faz login, então o insert não pede nada de volta:
+   ler a tabela é permitido só pra quem está logada no painel. */
+async function criarPedido(pedido){
+  const { error } = await db.from('pedidos').insert({
+    codigo: pedido.codigo,
+    itens: pedido.itens,
+    total: pedido.total,
+    status: 'pendente'
+  });
+  if(error) throw error;
+}
+async function buscarPedidos(){
+  const { data, error } = await db.from('pedidos')
+    .select('*').order('created_at', {ascending:false}).limit(200);
+  if(error) throw error;
+  return data || [];
+}
+async function mudarStatusPedido(id, status){
+  const { error } = await db.from('pedidos')
+    .update({ status, fechado_em: new Date().toISOString() }).eq('id', id);
+  if(error) throw error;
+}
+async function excluirPedido(id){
+  const { error } = await db.from('pedidos').delete().eq('id', id);
   if(error) throw error;
 }
 
@@ -2999,7 +3092,12 @@ function renderCart(){
     });
   });
 
-  let msg = "Olá! Vim pelo site e quero fazer um pedido:%0A%0A";
+  // o código vai na mensagem do WhatsApp e no painel, pra você casar
+  // a conversa com o pedido certo
+  if(!codigoDoPedido) codigoDoPedido = gerarCodigoPedido();
+  pedidoJaRegistrado = false;
+
+  let msg = `Olá! Vim pelo site e quero fazer um pedido:%0A%0A*Pedido ${codigoDoPedido}*%0A%0A`;
   cart.forEach((line, i)=>{
     msg += `*${line.name}*%0A`;
     if(line.size) msg += `Tamanho: ${line.size}%0A`;
@@ -3012,6 +3110,59 @@ function renderCart(){
   msg += `*Total: ${money(subtotal)}*%0A%0A`;
   msg += `Me ajuda a finalizar o pagamento? 🤍`;
   checkoutBtn.href = `https://wa.me/${WHATSAPP}?text=${msg}`;
+  totalDaSacola = subtotal;
+}
+
+/* ============================================================
+   REGISTRO DO PEDIDO
+
+   Ao tocar em "Finalizar pelo WhatsApp" o pedido entra como
+   PENDENTE no banco. O estoque NÃO sai agora — só quando você
+   confirma no painel, senão pedido abandonado travaria peça.
+   ============================================================ */
+let codigoDoPedido = null;
+let pedidoJaRegistrado = false;
+let totalDaSacola = 0;
+
+function gerarCodigoPedido(){
+  const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';  // sem I, O, 0, 1 (confundem)
+  let c = '';
+  for(let i = 0; i < 4; i++) c += letras[Math.floor(Math.random() * letras.length)];
+  return '#' + c;
+}
+
+function registrarPedido(){
+  if(MODO_LOCAL || !cart.length || pedidoJaRegistrado) return;
+  pedidoJaRegistrado = true;
+
+  const pedido = {
+    codigo: codigoDoPedido,
+    total: Number(totalDaSacola.toFixed(2)),
+    itens: cart.map(l=>({
+      produto_id: l.id,
+      nome: l.name,
+      cor: l.color || null,
+      tamanho: l.size || null,
+      qtd: l.qty,
+      preco: l.price
+    }))
+  };
+
+  // não dá pra esperar a resposta: o navegador bloquearia a ida
+  // pro WhatsApp se a gente segurasse o clique
+  criarPedido(pedido)
+    .then(()=>{
+      aviso(`Pedido ${pedido.codigo} registrado`, {tempo: 4200});
+      codigoDoPedido = null;
+      cart = [];
+      guardarSacola();
+      renderCart();
+    })
+    .catch(e=>{
+      console.error('Falha ao registrar o pedido:', e);
+      pedidoJaRegistrado = false;
+      aviso('Não consegui registrar o pedido aqui, mas seu WhatsApp já foi aberto — é só enviar a mensagem.', {tempo: 7000});
+    });
 }
 
 /* ---------- gaveta ---------- */
@@ -3028,6 +3179,7 @@ function closeDrawer(){
   drawer.classList.remove('open');
   travarRolagem(false);
 }
+document.getElementById('checkoutBtn').addEventListener('click', registrarPedido);
 document.getElementById('openCart').addEventListener('click', openDrawer);
 document.getElementById('closeCart').addEventListener('click', closeDrawer);
 overlay.addEventListener('click', closeDrawer);
@@ -3415,6 +3567,10 @@ document.querySelectorAll('.admin-back-link').forEach(a=>{
 });
 
 async function showAdminDashboard(){
+  carregarPedidos(false);
+  return showAdminDashboardInterno();
+}
+async function showAdminDashboardInterno(){
   document.getElementById('adminLogin').style.display = 'none';
   document.getElementById('adminDashboard').style.display = 'block';
   try{ await carregamentoInicial; }catch(e){}
@@ -3443,6 +3599,7 @@ function switchAdminPanel(name, produtoParaEditar){
     editingProductId = produtoParaEditar ? produtoParaEditar.id : null;
     renderProductForm(produtoParaEditar || null);
   }
+  if(name==='pedidos') renderPedidosPanel();
   if(name==='stock') renderStockPanel();
   if(name==='appearance') renderAppearancePanel();
   if(name==='settings') renderSettingsPanel();
@@ -3476,6 +3633,8 @@ function renderOverviewPanel(){
 
   const seta = '<svg class="seta" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
   const alertas = [];
+  const pendentes = pedidos.filter(x=>x.status==='pendente').length;
+  if(pendentes) alertas.push({n:'grave', chave:'__pedidos', txt:`<b>${pendentes}</b> ${pendentes===1?'pedido esperando':'pedidos esperando'} confirmação`});
   if(esgotados) alertas.push({n:'grave', chave:'esgotado', txt:`<b>${esgotados}</b> ${esgotados===1?'produto esgotado':'produtos esgotados'} — ninguém consegue comprar`});
   if(baixos)    alertas.push({n:'medio', chave:'baixo',   txt:`<b>${baixos}</b> com estoque baixo (até ${ESTOQUE_BAIXO} peças)`});
   if(semFotos)  alertas.push({n:'medio', chave:'semfoto', txt:`<b>${semFotos}</b> sem foto — a loja mostra uma imagem de exemplo`});
@@ -3518,7 +3677,10 @@ function renderOverviewPanel(){
   const novo = document.getElementById('atalhoNovo');
   if(novo) novo.addEventListener('click', ()=>{ editingProductId=null; switchAdminPanel('add'); });
   document.querySelectorAll('#panel-overview .admin-alerta').forEach(b=>{
-    b.addEventListener('click', ()=>irParaProdutos(b.dataset.ir));
+    b.addEventListener('click', ()=>{
+      if(b.dataset.ir === '__pedidos'){ filtroPedidos = 'pendente'; switchAdminPanel('pedidos'); }
+      else irParaProdutos(b.dataset.ir);
+    });
   });
 }
 
@@ -4189,6 +4351,242 @@ function renderImageGrid(){
       renderImageGrid();
     });
   });
+}
+
+/* ============================================================
+   PEDIDOS
+
+   Confirmar dá baixa no estoque de cada combinação comprada.
+   Cancelar não mexe em nada. A baixa só acontece depois de
+   conferir que há peça suficiente pra todos os itens.
+   ============================================================ */
+let pedidos = [];
+let filtroPedidos = 'pendente';
+
+function dataCurta(iso){
+  try{
+    return new Date(iso).toLocaleString('pt-BR', {
+      day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'
+    });
+  }catch(e){ return ''; }
+}
+
+/* quanto falta pra atender o pedido, item a item */
+function conferirEstoqueDoPedido(pedido){
+  const faltas = [];
+  (pedido.itens || []).forEach(item=>{
+    const prod = products.find(x=>x.id === item.produto_id);
+    if(!prod){
+      faltas.push(`${item.nome} — produto não existe mais`);
+      return;
+    }
+    const disponivel = estoqueDaVariacao(prod, item.cor || null, item.tamanho || null);
+    if(disponivel < item.qtd){
+      const variacao = [item.cor, item.tamanho].filter(Boolean).join(' · ');
+      faltas.push(`${item.nome}${variacao?` (${variacao})`:''} — pedido ${item.qtd}, tem ${disponivel === Infinity ? '—' : disponivel}`);
+    }
+  });
+  return faltas;
+}
+
+/* tira do estoque o que foi comprado */
+async function baixarEstoqueDoPedido(pedido){
+  const tocados = new Map();
+
+  (pedido.itens || []).forEach(item=>{
+    const prod = products.find(x=>x.id === item.produto_id);
+    if(!prod) return;
+    if(temGrade(prod)){
+      const v = acharVariacao(prod, item.cor || null, item.tamanho || null);
+      if(v) v.estoque = Math.max(0, (v.estoque || 0) - item.qtd);
+    } else {
+      prod.stock = Math.max(0, (prod.stock || 0) - item.qtd);
+    }
+    if(temGrade(prod)) prod.stock = estoqueTotal(prod);
+    tocados.set(prod.id, prod);
+  });
+
+  for(const prod of tocados.values()){
+    await atualizarProduto(prod.id, prod);
+  }
+}
+
+function renderPedidosPanel(){
+  const alvo = document.getElementById('panel-pedidos');
+  const contagens = {
+    pendente: pedidos.filter(p=>p.status==='pendente').length,
+    concluido: pedidos.filter(p=>p.status==='concluido').length,
+    cancelado: pedidos.filter(p=>p.status==='cancelado').length,
+  };
+  const lista = pedidos.filter(p=>p.status === filtroPedidos);
+  const abas = [['pendente','Pendentes'], ['concluido','Concluídos'], ['cancelado','Cancelados']];
+
+  if(MODO_LOCAL){
+    alvo.innerHTML = `
+      <div class="admin-cabeca"><div>
+        <h2>Pedidos</h2>
+        <div class="admin-sub">Os pedidos da loja aparecem aqui.</div>
+      </div></div>
+      <div class="admin-conexao local"><span class="ponto"></span><div>
+        <strong>Precisa do banco ligado</strong>
+        Sem o Supabase conectado a loja não tem onde guardar os pedidos.
+      </div></div>`;
+    return;
+  }
+
+  alvo.innerHTML = `
+    <div class="admin-cabeca"><div>
+      <h2>Pedidos</h2>
+      <div class="admin-sub">Confirmar dá baixa no estoque. Cancelar não mexe em nada.</div>
+    </div>
+    <button class="admin-btn vazado" id="recarregarPedidos">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+      Atualizar
+    </button></div>
+
+    <div class="admin-ferramentas">
+      <div class="admin-filtros">
+        ${abas.map(([k,r])=>`<button class="admin-filtro ${filtroPedidos===k?'on':''}" data-aba="${k}">${r}${contagens[k]?`<span class="qt">${contagens[k]}</span>`:''}</button>`).join('')}
+      </div>
+    </div>
+
+    <div id="listaPedidos"></div>`;
+
+  const caixa = document.getElementById('listaPedidos');
+  if(!lista.length){
+    caixa.innerHTML = `<div class="admin-vazio">
+      <strong>Nenhum pedido ${filtroPedidos === 'pendente' ? 'pendente' : filtroPedidos === 'concluido' ? 'concluído' : 'cancelado'}</strong>
+      ${filtroPedidos === 'pendente' ? 'Quando uma cliente finalizar pelo WhatsApp, o pedido cai aqui.' : ''}
+    </div>`;
+  } else {
+    caixa.innerHTML = lista.map(pd=>{
+      const faltas = pd.status === 'pendente' ? conferirEstoqueDoPedido(pd) : [];
+      const itens = (pd.itens || []).map(it=>{
+        const variacao = [it.cor, it.tamanho].filter(Boolean).join(' · ');
+        return `<div class="pedido-item">
+          <span class="pedido-qtd">${it.qtd}x</span>
+          <span class="pedido-nome">${esc(it.nome)}${variacao?` <span class="pedido-var">${esc(variacao)}</span>`:''}</span>
+          <span class="pedido-preco">${money((it.preco||0) * it.qtd)}</span>
+        </div>`;
+      }).join('');
+
+      return `
+      <div class="pedido-cartao ${pd.status}">
+        <div class="pedido-topo">
+          <div>
+            <span class="pedido-codigo">${esc(pd.codigo || '—')}</span>
+            <span class="pedido-data">${dataCurta(pd.created_at)}</span>
+          </div>
+          <span class="admin-badge ${pd.status === 'pendente' ? 'baixo' : pd.status === 'concluido' ? 'ok' : 'hidden'}">
+            ${pd.status === 'pendente' ? 'Pendente' : pd.status === 'concluido' ? 'Concluído' : 'Cancelado'}
+          </span>
+        </div>
+        <div class="pedido-itens">${itens}</div>
+        <div class="pedido-total"><span>Total</span><strong>${money(Number(pd.total) || 0)}</strong></div>
+        ${faltas.length ? `<div class="pedido-alerta">
+          <strong>Estoque não cobre este pedido:</strong>
+          ${faltas.map(f=>`<div>${esc(f)}</div>`).join('')}
+        </div>` : ''}
+        ${pd.status === 'pendente' ? `
+          <div class="pedido-acoes">
+            <button class="admin-btn" data-confirmar="${pd.id}" ${faltas.length?'disabled title="Ajuste o estoque antes de confirmar"':''}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              Confirmar e baixar estoque
+            </button>
+            <button class="admin-mini-btn danger" data-cancelar="${pd.id}">Cancelar</button>
+          </div>` : `
+          <div class="pedido-acoes">
+            <button class="admin-mini-btn danger" data-apagar-pedido="${pd.id}">Apagar do histórico</button>
+          </div>`}
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('recarregarPedidos').addEventListener('click', ()=>carregarPedidos(true));
+  alvo.querySelectorAll('[data-aba]').forEach(b=>{
+    b.addEventListener('click', ()=>{ filtroPedidos = b.dataset.aba; renderPedidosPanel(); });
+  });
+
+  caixa.querySelectorAll('[data-confirmar]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const pd = pedidos.find(x=>String(x.id) === b.dataset.confirmar);
+      if(!pd) return;
+      const faltas = conferirEstoqueDoPedido(pd);
+      if(faltas.length){ avisoAdmin('Estoque insuficiente — ajuste antes de confirmar.'); return; }
+      b.disabled = true;
+      try{
+        await baixarEstoqueDoPedido(pd);
+        await mudarStatusPedido(pd.id, 'concluido');
+        pd.status = 'concluido';
+        refreshStorefront();
+        renderPedidosPanel();
+        renderOverviewPanel();
+        atualizarContaPedidos();
+        avisoAdmin(`Pedido ${pd.codigo} confirmado e estoque atualizado`);
+      }catch(e){
+        console.error(e);
+        b.disabled = false;
+        avisoAdmin('Não consegui confirmar: ' + (e.message || 'erro de conexão'), 7000);
+        carregarPedidos(true);
+      }
+    });
+  });
+
+  caixa.querySelectorAll('[data-cancelar]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const pd = pedidos.find(x=>String(x.id) === b.dataset.cancelar);
+      if(!pd) return;
+      b.disabled = true;
+      try{
+        await mudarStatusPedido(pd.id, 'cancelado');
+        pd.status = 'cancelado';
+        renderPedidosPanel();
+        renderOverviewPanel();
+        atualizarContaPedidos();
+        avisoAdmin(`Pedido ${pd.codigo} cancelado — estoque não foi alterado`);
+      }catch(e){
+        console.error(e);
+        b.disabled = false;
+        avisoAdmin('Não consegui cancelar: ' + (e.message || 'erro de conexão'), 7000);
+      }
+    });
+  });
+
+  caixa.querySelectorAll('[data-apagar-pedido]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const id = Number(b.dataset.apagarPedido);
+      b.disabled = true;
+      try{
+        await excluirPedido(id);
+        pedidos = pedidos.filter(x=>x.id !== id);
+        renderPedidosPanel();
+      }catch(e){
+        console.error(e);
+        b.disabled = false;
+        avisoAdmin('Não consegui apagar: ' + (e.message || 'erro de conexão'));
+      }
+    });
+  });
+}
+
+async function carregarPedidos(redesenhar){
+  if(MODO_LOCAL) return;
+  try{
+    pedidos = await buscarPedidos();
+    atualizarContaPedidos();
+    if(redesenhar) renderPedidosPanel();
+  }catch(e){
+    console.error('Falha ao buscar pedidos:', e);
+    if(redesenhar) avisoAdmin('Não consegui carregar os pedidos: ' + (e.message || 'erro de conexão'));
+  }
+}
+
+function atualizarContaPedidos(){
+  const selo = document.getElementById('navContaPedidos');
+  if(!selo) return;
+  const n = pedidos.filter(p=>p.status==='pendente').length;
+  selo.textContent = n || '';
+  selo.classList.toggle('visivel', n > 0);
 }
 
 /* ---------- estoque ---------- */
