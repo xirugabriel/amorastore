@@ -1085,7 +1085,7 @@
   }
 
   /* ---------- marca com a última palavra em itálico ---------- */
-  .hot-titulo em, .convite-card h2 em, .cortina-nome em{
+  .logo-hot em, .hot-titulo em, .convite-card h2 em, .cortina-nome em{
     font-style:italic;font-weight:400;
     background:linear-gradient(115deg,#FF6E86 8%,#FF2D55 46%,#E7B869 98%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
@@ -1190,16 +1190,17 @@
   .convite-btn:hover{box-shadow:0 14px 38px rgba(200,16,46,.6);transform:translateY(-2px);}
   .convite-btn:hover svg{transform:translateX(4px);}
 
-  /* ---------- marca do cabeçalho dentro do Hot ---------- */
-  .logo-hot{display:flex;align-items:center;gap:9px;}
-  .logo-hot-tag{
-    display:inline-flex;align-items:center;height:19px;padding:0 8px;
-    border-radius:var(--r-full);background:linear-gradient(135deg,#E0203F,#9E0B24);
-    color:#FFF3F5;font-family:'Inter',sans-serif;font-weight:600;
-    font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;
-    box-shadow:0 3px 12px rgba(200,16,46,.45);
-  }
-  header.grudou .logo-hot-tag{height:17px;font-size:.52rem;}
+  /* ---------- a marca desenhada do Hot ----------
+     Mesma imagem em quatro lugares, em tamanhos diferentes: cabeçalho,
+     abertura do Hot, convite e cortina. Sem arquivo, cai no nome escrito
+     (as regras de itálico logo abaixo). */
+  .marca-hot{display:block;width:100%;height:auto;}
+  .logo-hot{display:flex;align-items:center;}
+  .logo-hot .marca-hot{width:auto;height:36px;transition:height .3s var(--ease);}
+  header.grudou .logo-hot .marca-hot{height:31px;}
+  .hot-titulo .marca-hot{width:min(500px,82vw);margin:0 auto;}
+  .convite-card h2 .marca-hot{width:min(292px,64vw);}
+  .cortina-nome .marca-hot{width:min(400px,76vw);margin:0 auto;}
 
   /* ---------- atalhos pro Hot no cabeçalho e no menu ---------- */
   .pilula-hot{
@@ -1339,9 +1340,9 @@
   }
   @media(max-width:760px){
     /* No celular não cabe a pílula escrita: ela vira um botão redondo do
-       tamanho dos outros ícones. A saída sai do cabeçalho (o cabeçalho do
-       Hot já é mais largo por causa da etiqueta) e fica na barra de baixo,
-       que é onde o polegar alcança. */
+       tamanho dos outros ícones. A saída sai do cabeçalho (a marca do Hot
+       é mais larga que a da loja) e fica na barra de baixo, que é onde o
+       polegar alcança. */
     header{gap:8px;}
     .pilula-hot{
       width:40px;height:40px;padding:0;gap:0;border-radius:50%;
@@ -1349,8 +1350,7 @@
     }
     .pilula-hot span{display:none;}
     .pilula-hot.volta{display:none;}
-    .logo-hot{gap:7px;}
-    .logo-hot-tag{height:17px;padding:0 6px;font-size:.5rem;letter-spacing:.12em;}
+    .logo-hot .marca-hot{height:32px;}
   }
   @media(max-width:640px){
     .cortina-nome{font-size:clamp(2.1rem,10vw,3.2rem);}
@@ -2087,7 +2087,7 @@
 
   <a href="#" class="logo-link" aria-label="Início">
     <img class="logo-mark" src="logo-topo.png" alt="Logo da loja" data-so="principal">
-    <span class="logo-hot" data-so="hot"><img class="logo-mark" src="logo-rodape.png" alt="Logo da loja"><span class="logo-hot-tag" data-loja="hot-curto"></span></span>
+    <span class="logo-hot" data-so="hot" data-loja-hot-marca></span>
   </a>
 
   <div class="header-dir">
@@ -2593,6 +2593,11 @@ const LOJA = {
   hot: {
     ativo: true,
     nome: "Amora Hot",
+    /* Arquivo da marca do Hot, na mesma pasta do index.html. Aparece na
+       cortina da entrada, na abertura do Hot, no convite e no cabeçalho.
+       É desenhada em tom claro, porque o fundo do Hot é escuro.
+       Deixando "", o site escreve o nome acima no lugar dela.            */
+    logo: "amorahot.png",
     categoriasPadrao: ["Sensual", "Fantasias", "Cosméticos"],
   },
 
@@ -2656,11 +2661,28 @@ function pintarBarraDoNavegador(cor){
 }
 let modoHot = false;               // true enquanto a cliente está dentro do Hot
 
-/* "Amora Hot" -> "Amora <em>Hot</em>": a última palavra ganha o itálico */
+/* "Amora Hot" -> "Amora <em>Hot</em>": a última palavra ganha o itálico.
+   Serve de reserva pra quando não há arquivo de marca. */
 function nomeHotHTML(){
   const partes = NOME_HOT.split(/\s+/);
   const ultima = partes.pop() || "";
   return (partes.length ? esc(partes.join(" ")) + " " : "") + "<em>" + esc(ultima) + "</em>";
+}
+
+/* Põe a marca do Hot dentro de um elemento. Se o arquivo não existir ou
+   não carregar, o nome escrito entra no lugar — a loja nunca fica sem
+   marca nenhuma na tela. */
+function pintarMarcaHot(el){
+  const arquivo = HOT_ATIVO && LOJA.hot.logo;
+  if(!arquivo){ el.innerHTML = nomeHotHTML(); return; }
+  const img = document.createElement('img');
+  img.className = 'marca-hot';
+  img.alt = NOME_HOT;
+  img.decoding = 'async';
+  img.addEventListener('error', ()=>{ el.innerHTML = nomeHotHTML(); }, { once:true });
+  img.src = arquivo;
+  el.innerHTML = '';
+  el.appendChild(img);
 }
 
 /* ------------------------------------------------------------
@@ -2711,9 +2733,13 @@ function aplicarIdentidade(){
 
   document.querySelectorAll(".logo-mark, .hero-mark").forEach(img=>{ img.alt = LOJA.nome; });
 
-  /* marca do Hot, com a última palavra em itálico */
+  /* marca do Hot: a imagem, ou o nome escrito quando não há arquivo */
   if(HOT_ATIVO){
-    document.querySelectorAll("[data-loja-hot-marca]").forEach(el=>{ el.innerHTML = nomeHotHTML(); });
+    document.querySelectorAll("[data-loja-hot-marca]").forEach(pintarMarcaHot);
+    /* a marca desenhada já traz chifres e pimenta: a chaminha da cortina
+       só faz falta quando é o nome escrito que aparece */
+    const chama = document.querySelector(".cortina-chama");
+    if(chama && LOJA.hot.logo) chama.style.display = "none";
   }
 
   const marca = document.querySelector(".logo-link");
