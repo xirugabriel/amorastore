@@ -128,16 +128,16 @@
     position:fixed;top:0;left:0;right:0;z-index:60;
     height:var(--h-header);padding:0 clamp(16px,4vw,44px);
     display:flex;align-items:center;justify-content:space-between;gap:14px;
+    /* Opaco de propósito. O Safari do iPhone pinta as faixas dele (o topo
+       do notch e o fundo atrás da barra de endereço) com a cor do elemento
+       fixo colado na borda da tela — e só considera fundo sem transparência.
+       Com vidro fosco aqui, as faixas ficavam com a cor da vitrine anterior. */
     background:var(--color-bg);
-    background:color-mix(in srgb, var(--color-bg) 72%, transparent);
-    backdrop-filter:saturate(180%) blur(18px);
-    -webkit-backdrop-filter:saturate(180%) blur(18px);
     border-bottom:1px solid transparent;
     transition:background .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
   }
   header.grudou{
     background:var(--color-bg);
-    background:color-mix(in srgb, var(--color-bg) 93%, transparent);
     border-bottom-color:rgba(220,198,166,.6);
     box-shadow:0 1px 20px rgba(46,17,25,.05);
   }
@@ -869,8 +869,6 @@
     .barra-inferior{
       position:fixed;left:0;right:0;bottom:0;z-index:75;
       display:flex;background:var(--color-bg);
-      background:color-mix(in srgb, var(--color-bg) 94%, transparent);
-      backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);
       border-top:1px solid rgba(220,198,166,.7);
       padding:6px 4px calc(6px + env(safe-area-inset-bottom));
       box-shadow:0 -4px 20px rgba(46,17,25,.06);
@@ -2582,9 +2580,28 @@ const COR_FUNDO_HOT = (function(){
   return (m && m.getAttribute('data-cor-hot')) || "#0E0608";
 })();
 
-/* Pinta as faixas do navegador (o topo do notch e o fundo atrás da barra
-   de endereço do Safari). Mudar só o content não basta: o iPhone continua
-   mostrando a cor antiga, então a etiqueta inteira é trocada. */
+/* O Safari só refaz a leitura da cor das faixas quando a página se mexe.
+   Sem este empurrãozinho de 1px, o topo e o rodapé ficam com a cor da
+   vitrine anterior até a cliente abrir um produto (foi o que aconteceu no
+   primeiro conserto). É invisível: desce um pixel e volta. */
+function cutucarBarraDoNavegador(){
+  const empurrar = ()=>{
+    const raiz = document.documentElement;
+    const antes = raiz.style.scrollBehavior;
+    const y = window.scrollY;
+    raiz.style.scrollBehavior = 'auto';
+    window.scrollTo(0, y + 1);
+    window.scrollTo(0, y);
+    raiz.style.scrollBehavior = antes;
+  };
+  empurrar();
+  setTimeout(empurrar, 140);   // de novo, já com a tela assentada
+}
+
+/* Pinta as faixas do navegador. Vale pro Android e pros Safari antigos,
+   que ainda usam a meta; o Safari novo tira a cor do cabeçalho e da barra
+   de baixo, que por isso são opacos. Mudar só o content não basta no
+   iPhone, então a etiqueta inteira é trocada. */
 function pintarBarraDoNavegador(cor){
   if(!cor) return;
   const atual = document.querySelector('meta[name="theme-color"]');
@@ -4307,6 +4324,7 @@ async function entrarNoHot(op){
   limparCortina(cortina);
   cortina.setAttribute('aria-hidden', 'true');
   raiz.classList.remove('trava-cortina');
+  cutucarBarraDoNavegador();
   transicaoHot = false;
 }
 
@@ -4349,6 +4367,7 @@ async function sairDoHot(op){
   limparCortina(cortina);
   cortina.setAttribute('aria-hidden', 'true');
   raiz.classList.remove('trava-cortina');
+  cutucarBarraDoNavegador();
   transicaoHot = false;
 }
 
