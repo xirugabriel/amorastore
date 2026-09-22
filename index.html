@@ -31,6 +31,11 @@
     var metaCor = document.querySelector('meta[name="theme-color"]');
     if(metaCor) metaCor.setAttribute('content', metaCor.getAttribute('data-cor-hot') || '#0E0608');
   }
+  /* A abertura não aparece quando o endereço já pede o Hot (lá a cortina
+     faz esse papel) nem quando vai direto pro painel. */
+  if(location.hash === '#hot' || location.hash.indexOf('admin') === 1){
+    document.documentElement.classList.add('sem-abertura');
+  }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1217,6 +1222,31 @@
   .barra-hot svg{color:#C8102E;}
   html[data-modo="hot"] .barra-hot.volta svg{color:var(--muted);}
 
+  /* ---------- abertura da loja ---------- */
+  .abertura{
+    position:fixed;inset:0;z-index:210;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+    background:var(--color-bg);
+    animation:abertura-sai .7s var(--ease) 2.2s forwards;
+  }
+  html.sem-abertura .abertura{display:none;}
+  .abertura-marca{
+    height:clamp(84px,21vw,124px);width:auto;
+    opacity:0;animation:abertura-marca .9s var(--ease-out) .08s forwards;
+  }
+  .abertura-linha{
+    display:block;width:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--line),transparent);
+    animation:abertura-linha 1.1s var(--ease-out) .3s forwards;
+  }
+  .abertura.saindo{animation:abertura-sai .6s var(--ease) forwards;}
+  @keyframes abertura-marca{
+    from{opacity:0;transform:scale(.93) translateY(10px);filter:blur(9px);}
+    to{opacity:1;transform:none;filter:none;}
+  }
+  @keyframes abertura-linha{to{width:min(196px,54vw);}}
+  @keyframes abertura-sai{to{opacity:0;visibility:hidden;}}
+
   /* ============================================================
      A TROCA DE VITRINE — as duas cortinas
      ============================================================ */
@@ -2004,6 +2034,17 @@
 </head>
 <body>
 
+<!-- ============================================================
+     ABERTURA DA LOJA
+     A marca aparece enquanto o catálogo carrega e some sozinha. Fica
+     visível já no primeiro quadro; se o JavaScript falhar, a própria
+     animação do CSS a retira em 2,9s, pra loja nunca ficar coberta.
+     ============================================================ -->
+<div class="abertura" id="abertura">
+  <img class="abertura-marca" src="logo-hero.png" alt="">
+  <span class="abertura-linha"></span>
+</div>
+
 <div id="storeApp">
 
 <!-- ============================================================
@@ -2585,7 +2626,7 @@ const COR_FUNDO_HOT = (function(){
    vitrine anterior até a cliente abrir um produto (foi o que aconteceu no
    primeiro conserto). É invisível: desce um pixel e volta. */
 function cutucarBarraDoNavegador(){
-  const empurrar = ()=>{
+  const empurrar = ()=>semTravaDeRolagem(()=>{
     const raiz = document.documentElement;
     const antes = raiz.style.scrollBehavior;
     const y = window.scrollY;
@@ -2593,7 +2634,7 @@ function cutucarBarraDoNavegador(){
     window.scrollTo(0, y + 1);
     window.scrollTo(0, y);
     raiz.style.scrollBehavior = antes;
-  };
+  });
   empurrar();
   setTimeout(empurrar, 140);   // de novo, já com a tela assentada
 }
@@ -4165,11 +4206,25 @@ function limparCortina(c){
 }
 /* rola sem a animação suave do CSS — a troca acontece atrás da cortina */
 function rolarSemAnimacao(y){
+  semTravaDeRolagem(()=>{
+    const raiz = document.documentElement;
+    const antes = raiz.style.scrollBehavior;
+    raiz.style.scrollBehavior = 'auto';
+    window.scrollTo(0, y);
+    raiz.style.scrollBehavior = antes;
+  });
+}
+
+/* Enquanto a cortina cobre a tela a página fica travada (overflow:hidden),
+   e aí rolar não funciona — nem pra reposicionar, nem pra fazer o Safari
+   reler a cor das barras. Esta função solta a trava, faz o que precisa e
+   prende de novo, tudo no mesmo quadro: nada pisca. */
+function semTravaDeRolagem(acao){
   const raiz = document.documentElement;
-  const antes = raiz.style.scrollBehavior;
-  raiz.style.scrollBehavior = 'auto';
-  window.scrollTo(0, y);
-  raiz.style.scrollBehavior = antes;
+  const travado = raiz.classList.contains('trava-cortina');
+  if(travado) raiz.classList.remove('trava-cortina');
+  try{ acao(); }
+  finally{ if(travado) raiz.classList.add('trava-cortina'); }
 }
 
 /* o convite só existe quando há pelo menos uma peça Hot à venda */
@@ -4306,6 +4361,7 @@ async function entrarNoHot(op){
   posicaoPrincipal = window.scrollY;
   aplicarModo(true);
   rolarSemAnimacao(0);
+  cutucarBarraDoNavegador();   // ainda atrás da cortina, pra não trocar de cor depois
   if(op.historico !== false && location.hash !== '#hot'){
     try{ history.pushState({modo:'hot'}, '', '#hot'); }catch(e){}
   }
@@ -4358,6 +4414,7 @@ async function sairDoHot(op){
 
   aplicarModo(false);
   rolarSemAnimacao(posicaoPrincipal || 0);
+  cutucarBarraDoNavegador();   // ainda atrás da cortina, pra não trocar de cor depois
   if(op.historico !== false && location.hash === '#hot'){
     try{ history.pushState({modo:'principal'}, '', location.pathname + location.search); }catch(e){}
   }
@@ -4410,6 +4467,23 @@ window.addEventListener('popstate', ()=>{
   if(querHot) entrarNoHot({ historico:false });
   else sairDoHot({ historico:false });
 });
+
+/* ---------- abertura da loja ----------
+   Sai assim que o catálogo chega, respeitando um tempo mínimo pra marca
+   não dar um susto e sumir. É a tela de carregamento também. */
+function encerrarAbertura(){
+  const tela = document.getElementById('abertura');
+  if(!tela || tela.dataset.saiu) return;
+  tela.dataset.saiu = '1';
+  tela.classList.add('saindo');
+  setTimeout(()=>tela.remove(), 700);
+}
+function encerrarAberturaQuandoPuder(){
+  if(document.documentElement.classList.contains('sem-abertura')) return encerrarAbertura();
+  const minimo = reduzMovimento() ? 0 : 1250;
+  const jaPassou = (typeof performance !== 'undefined' && performance.now) ? performance.now() : minimo;
+  setTimeout(encerrarAbertura, Math.max(0, minimo - jaPassou));
+}
 
 /* ---------- link direto (.../#hot) ---------- */
 function iniciarModoPelaUrl(){
@@ -4486,7 +4560,11 @@ const carregamentoInicial = bootLoja();
 carregamentoInicial.catch(()=>{});
 /* o link direto pro Hot espera o catálogo chegar (a cortina fica na tela
    enquanto isso), mas abre de qualquer jeito se o banco falhar */
-carregamentoInicial.then(iniciarModoPelaUrl, iniciarModoPelaUrl);
+function aoTerminarDeCarregar(){
+  encerrarAberturaQuandoPuder();
+  iniciarModoPelaUrl();
+}
+carregamentoInicial.then(aoTerminarDeCarregar, aoTerminarDeCarregar);
 
 /* ================= ADMIN ================= */
 
