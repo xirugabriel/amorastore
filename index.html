@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#FBF0E1">
+<!-- data-cor-hot: a cor que a barra do navegador assume dentro do Amora Hot.
+     Tem que ser a mesma do --color-bg do tema Hot, lá no CSS. -->
+<meta name="theme-color" content="#FBF0E1" data-cor-hot="#0E0608">
 
 <!-- ============================================================
      IDENTIDADE PARA BUSCADORES E PRÉVIA DE LINK
@@ -21,8 +23,14 @@
 <meta property="og:image" content="logo-hero.png">
 <script>
   /* Link direto pro Hot (endereço com #hot): a cortina escura já nasce
-     fechada, pra loja principal não piscar antes da troca de tema. */
-  if(location.hash === '#hot') document.documentElement.classList.add('abrindo-hot');
+     fechada, pra loja principal não piscar antes da troca de tema — e a
+     barra do navegador já nasce escura, senão o iPhone pinta o topo e o
+     rodapé com a cor da loja principal. */
+  if(location.hash === '#hot'){
+    document.documentElement.classList.add('abrindo-hot');
+    var metaCor = document.querySelector('meta[name="theme-color"]');
+    if(metaCor) metaCor.setAttribute('content', metaCor.getAttribute('data-cor-hot') || '#0E0608');
+  }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -45,6 +53,10 @@
     --color-price: var(--ink);
     --color-accent: var(--wine);
   }
+  /* O fundo vai no <html> também: o Safari do iPhone tira daí a cor das
+     faixas do topo (notch) e do rodapé (barra de endereço) enquanto a
+     página rola. Só no body, a troca de vitrine deixava as pontas claras. */
+  html{background:var(--color-bg) !important;}
   body{background:var(--color-bg) !important;color:var(--color-text) !important;}
   .hero h1, .secao-topo h2, .about h2, .d-card h3, .drawer-head h3, .modal-box h3,
   .card-name, .ficha-nome, .conf-item h4{color:var(--color-primary) !important;}
@@ -1298,7 +1310,19 @@
     .convite-btn{width:100%;}
   }
   @media(max-width:760px){
-    .pilula-hot{display:none;}
+    /* No celular não cabe a pílula escrita: ela vira um botão redondo do
+       tamanho dos outros ícones. A saída sai do cabeçalho (o cabeçalho do
+       Hot já é mais largo por causa da etiqueta) e fica na barra de baixo,
+       que é onde o polegar alcança. */
+    header{gap:8px;}
+    .pilula-hot{
+      width:40px;height:40px;padding:0;gap:0;border-radius:50%;
+      justify-content:center;flex:0 0 auto;
+    }
+    .pilula-hot span{display:none;}
+    .pilula-hot.volta{display:none;}
+    .logo-hot{gap:7px;}
+    .logo-hot-tag{height:17px;padding:0 6px;font-size:.5rem;letter-spacing:.12em;}
   }
   @media(max-width:640px){
     .cortina-nome{font-size:clamp(2.1rem,10vw,3.2rem);}
@@ -2551,7 +2575,27 @@ const LOCAL_LOJA   = [LOJA.cidade, LOJA.estado].filter(Boolean).join(" · ");
 
 const HOT_ATIVO     = !!(LOJA.hot && LOJA.hot.ativo !== false);
 const NOME_HOT      = HOT_ATIVO ? String(LOJA.hot.nome || "Hot").trim() : "";
-const COR_FUNDO_HOT = "#0E0608";   // precisa bater com --color-bg do tema Hot, no CSS
+/* Vem da própria meta lá no topo do arquivo, pra cor do Hot ficar
+   escrita num lugar só. Tem que bater com o --color-bg do tema Hot. */
+const COR_FUNDO_HOT = (function(){
+  const m = document.querySelector('meta[name="theme-color"]');
+  return (m && m.getAttribute('data-cor-hot')) || "#0E0608";
+})();
+
+/* Pinta as faixas do navegador (o topo do notch e o fundo atrás da barra
+   de endereço do Safari). Mudar só o content não basta: o iPhone continua
+   mostrando a cor antiga, então a etiqueta inteira é trocada. */
+function pintarBarraDoNavegador(cor){
+  if(!cor) return;
+  const atual = document.querySelector('meta[name="theme-color"]');
+  if(atual && atual.getAttribute('content') === cor) return;
+  const nova = document.createElement('meta');
+  nova.setAttribute('name', 'theme-color');
+  nova.setAttribute('content', cor);
+  nova.setAttribute('data-cor-hot', (atual && atual.getAttribute('data-cor-hot')) || COR_FUNDO_HOT);
+  if(atual) atual.remove();
+  document.head.appendChild(nova);
+}
 let modoHot = false;               // true enquanto a cliente está dentro do Hot
 
 /* "Amora Hot" -> "Amora <em>Hot</em>": a última palavra ganha o itálico */
@@ -2829,8 +2873,7 @@ function saveThemeToStorage(t){
 function applyTheme(t){
   const s = document.documentElement.style;
   // a barra do Safari usa esta meta — mantém igual ao fundo escolhido
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta && t.bg) meta.setAttribute('content', modoHot ? COR_FUNDO_HOT : t.bg);
+  if(t.bg) pintarBarraDoNavegador(modoHot ? COR_FUNDO_HOT : t.bg);
   s.setProperty('--color-primary', t.primary);
   s.setProperty('--color-secondary', t.secondary);
   s.setProperty('--color-bg', t.bg);
@@ -4140,8 +4183,7 @@ function aplicarModo(hot){
   const campoBusca = document.getElementById('buscaInput');
   if(campoBusca) campoBusca.value = '';
 
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', hot ? COR_FUNDO_HOT : (theme.bg || DEFAULT_THEME.bg));
+  pintarBarraDoNavegador(hot ? COR_FUNDO_HOT : (theme.bg || DEFAULT_THEME.bg));
 
   renderCatBar();
   renderTamBar();
