@@ -1145,8 +1145,8 @@
   .hot-promessas svg{color:#FF4F6D;flex:0 0 auto;}
   /* entrada escalonada, logo depois que a cortina abre */
   .hero-hot.animando .hot-surge{
-    animation:surge .9s var(--ease-out) both;
-    animation-delay:calc(var(--i) * 90ms + 80ms);
+    animation:surge .62s var(--ease-out) both;
+    animation-delay:calc(var(--i) * 70ms);
   }
   @keyframes surge{
     from{opacity:0;transform:translateY(20px);filter:blur(9px);}
@@ -1285,7 +1285,7 @@
   }
   .cortina-hot.mostra-marca .cortina-chama{opacity:1;transform:none;animation:tremula 2.6s ease-in-out .6s infinite;}
   .cortina-hot.mostra-marca .cortina-nome{opacity:1;transform:none;filter:none;}
-  .cortina-hot.mostra-marca .cortina-linha{width:min(190px,52vw);}
+  .mostra-marca .cortina-linha{width:min(190px,52vw);}
   html.abrindo-hot .cortina-chama{opacity:1;transform:none;}
   html.abrindo-hot .cortina-nome{opacity:1;transform:none;filter:none;}
   @keyframes tremula{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.72;transform:scale(1.07);}}
@@ -1321,8 +1321,8 @@
   /* ---------- cortina da volta ---------- */
   .cortina-volta{background:var(--cream);}
   .cortina-volta-logo{
-    height:96px;width:auto;opacity:0;transform:scale(.94);
-    transition:opacity .5s ease, transform .8s var(--ease-out);
+    height:clamp(84px,21vw,124px);width:auto;opacity:0;transform:scale(.94);
+    transition:opacity .45s ease, transform .7s var(--ease-out);
   }
   .cortina-volta.mostra-marca .cortina-volta-logo{opacity:1;transform:none;}
 
@@ -2070,7 +2070,10 @@
   </div>
 </div>
 <div class="cortina-volta" id="cortinaVolta" aria-hidden="true">
-  <img class="cortina-volta-logo" src="logo-hero.png" alt="">
+  <div class="cortina-marca">
+    <img class="cortina-volta-logo" src="logo-hero.png" alt="">
+    <span class="cortina-linha"></span>
+  </div>
 </div>
 
 <header id="cabecalho">
@@ -2641,7 +2644,6 @@ function cutucarBarraDoNavegador(){
     raiz.style.scrollBehavior = antes;
   });
   empurrar();
-  setTimeout(empurrar, 140);   // de novo, já com a tela assentada
 }
 
 /* Pinta as faixas do navegador. Vale pro Android e pros Safari antigos,
@@ -4183,6 +4185,15 @@ document.getElementById('deliveryWa').href =
    filtro vitrine() (troca o catálogo). Entre um e outro, uma cortina
    cobre a tela — é ela que segura o aviso de +18 na primeira visita.
    ============================================================ */
+/* O ritmo da troca de vitrine, igual nos dois sentidos. Antes a entrada
+   levava 2,7s e a saída 1,6s, com uma pausa parada no meio — daí a
+   sensação de atraso e de animação repetida. */
+const TROCA = {
+  cobrir:  460,   // a cortina fecha a partir do ponto em que a cliente tocou
+  marca:   120,   // quando a marca começa a aparecer
+  segurar: 380,   // quanto tempo a marca fica à vista, já coberta
+  abrir:   420,   // a cortina se desfaz
+};
 let transicaoHot = false;     // trava, pra dois cliques não se atropelarem
 let posicaoPrincipal = 0;     // onde a cliente estava na loja antes de entrar
 
@@ -4291,6 +4302,17 @@ function aplicarModo(hot){
   aoRolar();
 }
 
+/* Tudo que já está na altura da tela entra revelado, ainda atrás da
+   cortina. Sem isso, a página aparecia e só então as seções e os cartões
+   começavam a surgir — parecia que a transição recomeçava. */
+function assentarEntrada(){
+  const alturaTela = window.innerHeight;
+  document.querySelectorAll('.revela:not(.revelado), .card:not(.revelado)').forEach(el=>{
+    const r = el.getBoundingClientRect();
+    if(r.top < alturaTela && r.bottom > 0) el.classList.add('revelado');
+  });
+}
+
 /* fecha o que estiver aberto antes de a cortina subir */
 function fecharTudoAntesDaTroca(){
   fecharMenuMobile();
@@ -4354,11 +4376,11 @@ async function entrarNoHot(op){
     cortina.classList.add('mostra-marca');
     await animar(cortina, [{opacity:0},{opacity:1}], {duration:200});
   } else {
-    setTimeout(()=>cortina.classList.add('mostra-marca'), 260);
+    setTimeout(()=>cortina.classList.add('mostra-marca'), TROCA.marca);
     await animar(cortina, [
       {clipPath:`circle(0px at ${ponto.x}px ${ponto.y}px)`},
       {clipPath:`circle(${raio}px at ${ponto.x}px ${ponto.y}px)`}
-    ], {duration:780, easing:'cubic-bezier(.7,0,.25,1)'});
+    ], {duration:TROCA.cobrir, easing:'cubic-bezier(.65,0,.35,1)'});
   }
 
   if(!maiorDeIdadeConfirmado()){
@@ -4370,7 +4392,7 @@ async function entrarNoHot(op){
         await animar(cortina, [
           {clipPath:`circle(${raio}px at ${ponto.x}px ${ponto.y}px)`},
           {clipPath:`circle(0px at ${ponto.x}px ${ponto.y}px)`}
-        ], {duration:620, easing:'cubic-bezier(.7,0,.25,1)'});
+        ], {duration:TROCA.cobrir, easing:'cubic-bezier(.65,0,.35,1)'});
       }
       /* tira o #hot do endereço pra um F5 não cair na mesma pergunta */
       if(location.hash === '#hot'){
@@ -4387,26 +4409,26 @@ async function entrarNoHot(op){
   posicaoPrincipal = window.scrollY;
   aplicarModo(true);
   rolarSemAnimacao(0);
-  cutucarBarraDoNavegador();   // ainda atrás da cortina, pra não trocar de cor depois
+  cutucarBarraDoNavegador();   // ainda atrás da cortina: a cor não muda mais depois
+  assentarEntrada();
   if(op.historico !== false && location.hash !== '#hot'){
     try{ history.pushState({modo:'hot'}, '', '#hot'); }catch(e){}
   }
 
-  /* deixa a marca à vista um instante antes de abrir a cortina */
-  const espera = (calmo ? 0 : 1250) - (Date.now() - comecou);
-  if(espera > 0) await esperar(espera);
-
+  /* A abertura do Hot começa ainda coberta, pra terminar junto com a
+     cortina — assim é um movimento só, e não dois seguidos. */
   const abertura = document.getElementById('inicioHot');
   if(abertura && !calmo){
     abertura.classList.remove('animando');
     void abertura.offsetWidth;
     abertura.classList.add('animando');
   }
-  await animar(cortina, [{opacity:1},{opacity:0}], {duration: calmo ? 200 : 680, easing:'ease'});
+
+  if(!calmo) await esperar(TROCA.segurar);
+  await animar(cortina, [{opacity:1},{opacity:0}], {duration: calmo ? 200 : TROCA.abrir, easing:'ease'});
   limparCortina(cortina);
   cortina.setAttribute('aria-hidden', 'true');
   raiz.classList.remove('trava-cortina');
-  cutucarBarraDoNavegador();
   transicaoHot = false;
 }
 
@@ -4431,26 +4453,26 @@ async function sairDoHot(op){
     cortina.classList.add('mostra-marca');
     await animar(cortina, [{opacity:0},{opacity:1}], {duration:200});
   } else {
-    setTimeout(()=>cortina.classList.add('mostra-marca'), 200);
+    setTimeout(()=>cortina.classList.add('mostra-marca'), TROCA.marca);
     await animar(cortina, [
       {clipPath:`circle(0px at ${ponto.x}px ${ponto.y}px)`},
       {clipPath:`circle(${raio}px at ${ponto.x}px ${ponto.y}px)`}
-    ], {duration:660, easing:'cubic-bezier(.7,0,.25,1)'});
+    ], {duration:TROCA.cobrir, easing:'cubic-bezier(.65,0,.35,1)'});
   }
 
   aplicarModo(false);
   rolarSemAnimacao(posicaoPrincipal || 0);
-  cutucarBarraDoNavegador();   // ainda atrás da cortina, pra não trocar de cor depois
+  cutucarBarraDoNavegador();   // ainda atrás da cortina: a cor não muda mais depois
+  assentarEntrada();
   if(op.historico !== false && location.hash === '#hot'){
     try{ history.pushState({modo:'principal'}, '', location.pathname + location.search); }catch(e){}
   }
 
-  if(!calmo) await esperar(360);
-  await animar(cortina, [{opacity:1},{opacity:0}], {duration: calmo ? 200 : 540, easing:'ease'});
+  if(!calmo) await esperar(TROCA.segurar);
+  await animar(cortina, [{opacity:1},{opacity:0}], {duration: calmo ? 200 : TROCA.abrir, easing:'ease'});
   limparCortina(cortina);
   cortina.setAttribute('aria-hidden', 'true');
   raiz.classList.remove('trava-cortina');
-  cutucarBarraDoNavegador();
   transicaoHot = false;
 }
 
