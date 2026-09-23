@@ -1267,28 +1267,35 @@
       #0B0406;
   }
   .cortina-marca{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  /* A marca entra por ANIMAÇÃO, não por transição. Transição só dispara
+     quando o valor muda, e depois de esconder a cortina esse valor nem
+     sempre voltava ao ponto de partida — aí a intro tocava na primeira
+     troca e ficava muda nas seguintes. Animação recomeça do zero toda vez
+     que a classe .mostra-marca volta. */
   .cortina-chama{
-    color:#FF4F6D;opacity:0;transform:scale(.8);
+    color:#FF4F6D;opacity:0;
     filter:drop-shadow(0 0 16px rgba(255,60,90,.75));
-    transition:opacity .5s ease, transform .6s var(--spring);
   }
   .cortina-nome{
     font-family:'Fraunces',serif;font-weight:500;letter-spacing:-.02em;
     font-size:clamp(2.4rem,8.5vw,4.6rem);line-height:1;color:#FFE9EC;
-    opacity:0;transform:translateY(12px) scale(.97);filter:blur(12px);
-    transition:opacity .6s ease, transform .85s var(--ease-out), filter .6s ease;
+    opacity:0;
   }
   .cortina-linha{
     display:block;width:0;height:1px;
     background:linear-gradient(90deg,transparent,#E7B869,transparent);
-    transition:width 1s var(--ease-out);
   }
-  .cortina-hot.mostra-marca .cortina-chama{opacity:1;transform:none;animation:tremula 2.6s ease-in-out .6s infinite;}
-  .cortina-hot.mostra-marca .cortina-nome{opacity:1;transform:none;filter:none;}
-  .mostra-marca .cortina-linha{width:min(190px,52vw);}
-  html.abrindo-hot .cortina-chama{opacity:1;transform:none;}
-  html.abrindo-hot .cortina-nome{opacity:1;transform:none;filter:none;}
-  @keyframes tremula{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.72;transform:scale(1.07);}}
+  .mostra-marca .cortina-chama{animation:marca-entra .5s var(--ease-out) both, tremula 2.6s ease-in-out .6s infinite;}
+  .mostra-marca .cortina-nome{animation:marca-entra .58s var(--ease-out) both;}
+  .mostra-marca .cortina-volta-logo{animation:marca-entra .5s var(--ease-out) both;}
+  .mostra-marca .cortina-linha{animation:fio-abre .9s var(--ease-out) both;}
+  html.abrindo-hot .cortina-chama, html.abrindo-hot .cortina-nome{opacity:1;}
+  @keyframes marca-entra{
+    from{opacity:0;transform:translateY(12px) scale(.96);filter:blur(12px);}
+    to{opacity:1;transform:none;filter:none;}
+  }
+  @keyframes fio-abre{from{width:0;}to{width:min(190px,52vw);}}
+  @keyframes tremula{0%,100%{transform:scale(1);}50%{transform:scale(1.07);}}
 
   /* ---------- aviso de maioridade, dentro da cortina ---------- */
   .portao{
@@ -1321,10 +1328,8 @@
   /* ---------- cortina da volta ---------- */
   .cortina-volta{background:var(--cream);}
   .cortina-volta-logo{
-    height:clamp(84px,21vw,124px);width:auto;opacity:0;transform:scale(.94);
-    transition:opacity .45s ease, transform .7s var(--ease-out);
+    height:clamp(84px,21vw,124px);width:auto;opacity:0;
   }
-  .cortina-volta.mostra-marca .cortina-volta-logo{opacity:1;transform:none;}
 
   /* ============================================================
      O HOT NO CELULAR
@@ -4216,10 +4221,15 @@ function animar(el, quadros, opcoes){
      O relógio abaixo destrava assim mesmo: cortina presa na tela deixaria
      a loja inteira inacessível. */
   const limite = ((opcoes && opcoes.duration) || 0) + 600;
-  return Promise.race([
-    anim.finished.catch(()=>{}),
-    esperar(limite).then(()=>{ try{ anim.finish(); }catch(e){} }),
-  ]);
+  let relogio;
+  const rede = new Promise(resolver=>{
+    relogio = setTimeout(()=>{ try{ anim.finish(); }catch(e){} resolver(); }, limite);
+  });
+  /* O relógio é desarmado assim que a animação termina: deixá-lo correndo
+     fazia ele chamar finish() numa animação já cancelada mais adiante, o
+     que podia deixar a cortina presa e invisível na troca seguinte. */
+  return Promise.race([anim.finished.catch(()=>{}), rede])
+    .then(()=>{ clearTimeout(relogio); });
 }
 function pontoDeOrigem(origem){
   const o = origem || {};
@@ -4235,9 +4245,27 @@ function pontoDoClique(evento, elemento){
 function raioAteOCanto(x, y){
   return Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y)) + 4;
 }
+/* Animações da cortina e de tudo que está dentro dela (a marca, o fio). */
+function animacoesDaCortina(c){
+  if(!c.getAnimations) return [];
+  try{ return c.getAnimations({ subtree:true }); }
+  catch(e){ return c.getAnimations(); }
+}
+
+/* Zera a cortina antes de cada troca. Sem isto, sobra de uma troca
+   anterior (uma animação não terminada, a marca já revelada) fazia a
+   intro tocar só na primeira vez. */
+function prepararCortina(c){
+  animacoesDaCortina(c).forEach(a=>a.cancel());
+  c.classList.remove('mostra-marca');
+  c.style.clipPath = '';
+  c.style.opacity = '';
+  void c.offsetWidth;   // obriga o navegador a assentar esse estado agora
+}
+
 function limparCortina(c){
   c.classList.remove('ativa','mostra-marca');
-  if(c.getAnimations) c.getAnimations().forEach(a=>a.cancel());
+  animacoesDaCortina(c).forEach(a=>a.cancel());
   c.style.clipPath = '';
   c.style.opacity = '';
 }
@@ -4365,6 +4393,7 @@ async function entrarNoHot(op){
 
   fecharTudoAntesDaTroca();
   raiz.classList.add('trava-cortina');
+  prepararCortina(cortina);
   cortina.classList.add('ativa');
   cortina.setAttribute('aria-hidden', 'false');
 
@@ -4445,6 +4474,7 @@ async function sairDoHot(op){
 
   fecharTudoAntesDaTroca();
   raiz.classList.add('trava-cortina');
+  prepararCortina(cortina);
   cortina.style.background = theme.bg || DEFAULT_THEME.bg;
   cortina.classList.add('ativa');
   cortina.setAttribute('aria-hidden', 'false');
