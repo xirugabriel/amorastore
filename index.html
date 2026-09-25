@@ -33,7 +33,8 @@
   }
   /* A abertura não aparece quando o endereço já pede o Hot (lá a cortina
      faz esse papel) nem quando vai direto pro painel. */
-  if(location.hash === '#hot' || location.hash.indexOf('admin') === 1){
+  if(location.hash === '#hot' || location.hash.indexOf('admin') === 1
+     || location.hash.indexOf('#produto-') === 0){
     document.documentElement.classList.add('sem-abertura');
   }
 </script>
@@ -473,6 +474,16 @@
     transition:opacity .3s var(--ease), transform .42s var(--ease-out);
   }
   .ficha.aberta{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+  .ficha-compartilhar{
+    position:absolute;top:14px;right:60px;z-index:5;
+    width:38px;height:38px;border-radius:50%;
+    background:rgba(251,240,225,.92);color:var(--wine-deep);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:var(--sh-2);transition:transform .2s var(--ease), background .2s;
+  }
+  .ficha-compartilhar:hover{background:var(--wine);color:var(--cream);transform:translateY(-2px);}
+  html[data-modo="hot"] .ficha-compartilhar{background:rgba(14,6,8,.8);color:#FFE1E6;}
+  html[data-modo="hot"] .ficha-compartilhar:hover{background:var(--brasa) !important;color:#FFF3F5 !important;}
   .ficha-fechar{
     position:absolute;top:14px;right:14px;z-index:5;
     width:38px;height:38px;border-radius:50%;
@@ -926,6 +937,7 @@
     .ficha-nome{font-size:1.4rem;}
     .ficha-precos .price{font-size:1.3rem;}
     .ficha-fechar{top:16px;right:12px;width:34px;height:34px;}
+    .ficha-compartilhar{top:16px;right:54px;width:34px;height:34px;}
     .ficha-acoes{
       position:sticky;bottom:0;background:var(--color-bg);
       padding:12px 20px calc(16px + env(safe-area-inset-bottom));
@@ -2362,6 +2374,9 @@
 <div class="ficha-fundo" id="fichaFundo"></div>
 <div class="ficha" id="ficha" role="dialog" aria-modal="true" aria-label="Detalhes do produto">
   <div class="ficha-pegada"></div>
+  <button class="ficha-compartilhar" id="compartilharFicha" aria-label="Compartilhar esta peça">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M12 3L8 7M12 3l4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+  </button>
   <button class="ficha-fechar" id="fecharFicha" aria-label="Fechar">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
   </button>
@@ -2639,16 +2654,20 @@ const COR_FUNDO_HOT = (function(){
    vitrine anterior até a cliente abrir um produto (foi o que aconteceu no
    primeiro conserto). É invisível: desce um pixel e volta. */
 function cutucarBarraDoNavegador(){
-  const empurrar = ()=>semTravaDeRolagem(()=>{
-    const raiz = document.documentElement;
+  const raiz = document.documentElement;
+  const y = window.scrollY;
+  const mover = (para)=>semTravaDeRolagem(()=>{
     const antes = raiz.style.scrollBehavior;
-    const y = window.scrollY;
     raiz.style.scrollBehavior = 'auto';
-    window.scrollTo(0, y + 1);
-    window.scrollTo(0, y);
+    window.scrollTo(0, para);
     raiz.style.scrollBehavior = antes;
   });
-  empurrar();
+  /* Ir e voltar no mesmo quadro o navegador junta numa coisa só, e aí o
+     Safari não vê movimento nenhum — era por isso que a cor do topo e do
+     rodapé só mudava sozinha, um segundo depois. A volta vai num quadro
+     seguinte, pra virar um movimento de verdade. */
+  mover(y + 1);
+  setTimeout(()=>mover(y), 60);
 }
 
 /* Pinta as faixas do navegador. Vale pro Android e pros Safari antigos,
@@ -3424,6 +3443,44 @@ document.addEventListener('keydown', (e)=>{
 /* ============================================================
    FICHA DO PRODUTO
    ============================================================ */
+
+/* Cada peça tem endereço próprio: .../#produto-12. Quem abre esse link
+   cai direto na ficha dela — e, se for peça do Hot, o site entra no Hot
+   antes (pedindo a confirmação de idade, como sempre). */
+function enderecoDoProduto(p){
+  try{
+    const u = new URL(location.href);
+    u.hash = 'produto-' + p.id;
+    return u.toString();
+  }catch(e){
+    return location.origin + location.pathname + '#produto-' + p.id;
+  }
+}
+
+async function compartilharProduto(){
+  if(!fichaEstado) return;
+  const p = products.find(x=>x.id === fichaEstado.id);
+  if(!p) return;
+  const link = enderecoDoProduto(p);
+
+  /* No celular abre a janela de compartilhar do próprio aparelho
+     (WhatsApp, Instagram, o que a cliente tiver). No computador,
+     copia o link. */
+  if(navigator.share){
+    try{
+      await navigator.share({ title: p.name, text: `${p.name} — ${money(p.price)}`, url: link });
+      return;
+    }catch(e){
+      if(e && e.name === 'AbortError') return;   // ela fechou a janela
+    }
+  }
+  try{
+    await navigator.clipboard.writeText(link);
+    aviso('Link da peça copiado.');
+  }catch(e){
+    aviso('Copie o link na barra de endereço do navegador.', { tempo: 5000 });
+  }
+}
 const ficha = document.getElementById('ficha');
 const fichaFundo = document.getElementById('fichaFundo');
 let fichaEstado = null;
@@ -3458,9 +3515,13 @@ function abrirFicha(id){
   ficha.classList.add('aberta');
   fichaFundo.classList.add('aberta');
   travarRolagem(true);
-  if(!fichaEmpurrouHistorico){
-    try{ history.pushState({ficha:true}, ''); fichaEmpurrouHistorico = true; }catch(err){}
-  }
+  /* o endereço passa a apontar pra esta peça, pra dar pra copiar da
+     barra do navegador e pro botão voltar fechar a ficha */
+  try{
+    const alvo = enderecoDoProduto(p);
+    if(fichaEmpurrouHistorico) history.replaceState({ficha:true}, '', alvo);
+    else { history.pushState({ficha:true}, '', alvo); fichaEmpurrouHistorico = true; }
+  }catch(err){}
   setTimeout(()=>{ const b = document.getElementById('fecharFicha'); if(b) b.focus(); }, 60);
 }
 
@@ -3689,6 +3750,7 @@ function adicionarPelaFicha(p){
 }
 
 document.getElementById('fecharFicha').addEventListener('click', ()=>fecharFicha());
+document.getElementById('compartilharFicha').addEventListener('click', compartilharProduto);
 fichaFundo.addEventListener('click', ()=>fecharFicha());
 
 /* ============================================================
@@ -4438,7 +4500,6 @@ async function entrarNoHot(op){
   posicaoPrincipal = window.scrollY;
   aplicarModo(true);
   rolarSemAnimacao(0);
-  cutucarBarraDoNavegador();   // ainda atrás da cortina: a cor não muda mais depois
   assentarEntrada();
   if(op.historico !== false && location.hash !== '#hot'){
     try{ history.pushState({modo:'hot'}, '', '#hot'); }catch(e){}
@@ -4458,6 +4519,7 @@ async function entrarNoHot(op){
   limparCortina(cortina);
   cortina.setAttribute('aria-hidden', 'true');
   raiz.classList.remove('trava-cortina');
+  cutucarBarraDoNavegador();   // agora sim: a cortina saiu, o iPhone relê o cabeçalho
   transicaoHot = false;
 }
 
@@ -4492,7 +4554,6 @@ async function sairDoHot(op){
 
   aplicarModo(false);
   rolarSemAnimacao(posicaoPrincipal || 0);
-  cutucarBarraDoNavegador();   // ainda atrás da cortina: a cor não muda mais depois
   assentarEntrada();
   if(op.historico !== false && location.hash === '#hot'){
     try{ history.pushState({modo:'principal'}, '', location.pathname + location.search); }catch(e){}
@@ -4503,6 +4564,7 @@ async function sairDoHot(op){
   limparCortina(cortina);
   cortina.setAttribute('aria-hidden', 'true');
   raiz.classList.remove('trava-cortina');
+  cutucarBarraDoNavegador();   // agora sim: a cortina saiu, o iPhone relê o cabeçalho
   transicaoHot = false;
 }
 
@@ -4539,7 +4601,8 @@ document.addEventListener('click', (e)=>{
 /* ---------- botão voltar do navegador ---------- */
 window.addEventListener('popstate', ()=>{
   if(!HOT_ATIVO || transicaoHot) return;
-  if(location.hash === '#admin') return;      // o painel cuida de si
+  if(location.hash === '#admin') return;              // o painel cuida de si
+  if(location.hash.indexOf('#produto-') === 0) return; // ficha aberta: a vitrine não muda
   const querHot = location.hash === '#hot';
   if(querHot === modoHot) return;
   if(querHot) entrarNoHot({ historico:false });
@@ -4556,11 +4619,31 @@ function encerrarAbertura(){
   tela.classList.add('saindo');
   setTimeout(()=>tela.remove(), 700);
 }
-function encerrarAberturaQuandoPuder(){
-  if(document.documentElement.classList.contains('sem-abertura')) return encerrarAbertura();
+function encerrarAberturaQuandoPuder(depois){
+  const pronto = ()=>{ encerrarAbertura(); if(depois) depois(); };
+  if(document.documentElement.classList.contains('sem-abertura')) return pronto();
   const minimo = reduzMovimento() ? 0 : 1250;
   const jaPassou = (typeof performance !== 'undefined' && performance.now) ? performance.now() : minimo;
-  setTimeout(encerrarAbertura, Math.max(0, minimo - jaPassou));
+  setTimeout(pronto, Math.max(0, minimo - jaPassou));
+}
+
+/* ---------- link direto de uma peça (.../#produto-12) ---------- */
+async function abrirDestinoDaUrl(){
+  const achado = /^#produto-(\d+)$/.exec(location.hash || '');
+  if(!achado) return;
+  const id = Number(achado[1]);
+  const p = products.find(x=>x.id === id);
+  if(!p || p.available === false){
+    aviso('Essa peça não está mais disponível.', { tempo: 5000 });
+    try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+    return;
+  }
+  /* peça do Hot: entra no Hot primeiro, com a confirmação de idade */
+  if(ehHot(p) && !modoHot){
+    await entrarNoHot({ historico:false });
+    if(!modoHot) return;              // ela respondeu que não tem 18
+  }
+  abrirFicha(id);
 }
 
 /* ---------- link direto (.../#hot) ---------- */
@@ -4639,8 +4722,8 @@ carregamentoInicial.catch(()=>{});
 /* o link direto pro Hot espera o catálogo chegar (a cortina fica na tela
    enquanto isso), mas abre de qualquer jeito se o banco falhar */
 function aoTerminarDeCarregar(){
-  encerrarAberturaQuandoPuder();
   iniciarModoPelaUrl();
+  encerrarAberturaQuandoPuder(abrirDestinoDaUrl);
 }
 carregamentoInicial.then(aoTerminarDeCarregar, aoTerminarDeCarregar);
 
