@@ -140,7 +140,10 @@
        Com vidro fosco aqui, as faixas ficavam com a cor da vitrine anterior. */
     background:var(--color-bg);
     border-bottom:1px solid transparent;
-    transition:background .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+    /* Sem transição no fundo de propósito: ele só muda na troca de vitrine,
+       e o Safari lê a cor do cabeçalho pra pintar as barras dele. Se lesse no
+       meio de uma transição, ficava com a cor intermediária até reler sozinho. */
+    transition:border-color .3s var(--ease), box-shadow .3s var(--ease);
   }
   header.grudou{
     background:var(--color-bg);
@@ -1274,9 +1277,11 @@
 
   .cortina-hot{
     color:#FFE9EC;
+    /* o preto do fim é o mesmo --color-bg do tema Hot: assim, seja a cortina
+       ou o cabeçalho que o iPhone resolva ler, a cor dá na mesma */
     background:
       radial-gradient(ellipse 72% 56% at 50% 58%, rgba(200,16,46,.5), transparent 70%),
-      #0B0406;
+      #0E0608;
   }
   .cortina-marca{display:flex;flex-direction:column;align-items:center;gap:14px;}
   /* A marca entra por ANIMAÇÃO, não por transição. Transição só dispara
@@ -4501,6 +4506,7 @@ async function entrarNoHot(op){
   aplicarModo(true);
   rolarSemAnimacao(0);
   assentarEntrada();
+  cutucarBarraDoNavegador();   // com a tela coberta: a cor troca durante a animação
   if(op.historico !== false && location.hash !== '#hot'){
     try{ history.pushState({modo:'hot'}, '', '#hot'); }catch(e){}
   }
@@ -4555,6 +4561,7 @@ async function sairDoHot(op){
   aplicarModo(false);
   rolarSemAnimacao(posicaoPrincipal || 0);
   assentarEntrada();
+  cutucarBarraDoNavegador();   // com a tela coberta: a cor troca durante a animação
   if(op.historico !== false && location.hash === '#hot'){
     try{ history.pushState({modo:'principal'}, '', location.pathname + location.search); }catch(e){}
   }
